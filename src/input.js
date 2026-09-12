@@ -12,6 +12,13 @@ export class Input {
     this.touch = false;
     this._bindKeys();
     this._bindTouch(root);
+    // Bound on the window, so it still fires when the touch overlay is hidden
+    // -- which is the case this is here to recover from.
+    addEventListener('touchstart', () => {
+      if (this.touch) return;
+      this.touch = true;
+      if (this.onFirstTouch) this.onFirstTouch();
+    }, { passive: true, capture: true });
   }
 
   press(name) { this.pressed.add(name); }
@@ -54,6 +61,7 @@ export class Input {
 
     const start = (e) => {
       this.touch = true;
+      if (this.onGesture) this.onGesture();
       const t = e.changedTouches ? e.changedTouches[0] : e;
       this.stick.active = true;
       this.stick.id = t.identifier === undefined ? 'mouse' : t.identifier;
@@ -107,6 +115,7 @@ export class Input {
       if (!el) return;
       const on = (e) => {
         this.touch = true; this.press(name);
+        if (this.onGesture) this.onGesture();
         el.classList.add('held');
         setTimeout(() => el.classList.remove('held'), 90);
         e.preventDefault(); e.stopPropagation();

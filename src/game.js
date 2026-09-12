@@ -72,7 +72,14 @@ export class Game {
   constructor(canvas) {
     this.canvas = canvas;
     this.mode = 'title';         // title | play | menu | dead | end
-    this.touchMode = matchMedia('(pointer: coarse)').matches;
+    // Whether to show the on-screen controls. A single media query is not
+    // enough: `pointer: coarse` reports false in desktop-site mode and on
+    // phones with a stylus or a paired mouse, and getting this wrong on a
+    // phone leaves no way at all to control the game.
+    this.touchMode = (navigator.maxTouchPoints || 0) > 0
+      || 'ontouchstart' in window
+      || matchMedia('(pointer: coarse)').matches
+      || matchMedia('(any-pointer: coarse)').matches;
 
     this.renderer = new THREE.WebGLRenderer({
       canvas, antialias: false, powerPreference: 'high-performance', stencil: false,
@@ -88,6 +95,12 @@ export class Game {
     this.post = new PostFX(this.renderer);
     this.ui = new UI(this);
     this.input = new Input(document);
+    // Last line of defence: an actual touch proves there is a touchscreen,
+    // whatever the media queries claimed.
+    this.input.onFirstTouch = () => this.enableTouchControls();
+    // Fullscreen is only granted from inside a real gesture handler, so take a
+    // second chance from the first on-screen control the player touches.
+    this.input.onGesture = () => this.goFullscreen();
 
     this.clock = new THREE.Clock();
     this.fade = 1;
@@ -103,6 +116,13 @@ export class Game {
   }
 
   // ------------------------------------------------------------------ setup
+  enableTouchControls() {
+    if (this.touchMode) return;
+    this.touchMode = true;
+    const hudVisible = !this.ui.el.hud.classList.contains('hidden');
+    this.ui.el.touch.classList.toggle('hidden', !hudVisible);
+  }
+
   resize() {
     const w = innerWidth, h = innerHeight;
     this.updateOrientationGate();
@@ -270,16 +290,33 @@ export class Game {
       this.enemies.push(e);
     });
 
-    // place the player
+    // Place the player. A spawn point that has drifted inside a collider -- a
+    // prop moved during a lighting pass, say -- would trap the player with no
+    // way out at all, so the point is resolved against the geometry that was
+    // actually built rather than trusted.
     const entry = (def.entries && (def.entries[fromId] || def.entries.start)) || [0, 0, 0];
-    this.player.x = entry[0]; this.player.z = entry[1]; this.player.angle = entry[2];
-    this.player.group.position.set(entry[0], 0, entry[1]);
+    const spot = this.resolveSpawn(entry[0], entry[1], PLAYER_R);
+    this.player.x = spot.x; this.player.z = spot.z; this.player.angle = entry[2];
+    this.player.group.position.set(spot.x, 0, spot.z);
     this.player.group.rotation.y = entry[2];
     this.quickTurn = null;
     this.qtLatch = false;
     this.pickCamera(true);
     this.ui.setRoom(def.name);
     this.checkpoint = this.snapshot();
+  }
+
+  resolveSpawn(x, z, r) {
+    if (!this.blocked(x, z, r)) return { x, z };
+    for (let ring = 1; ring <= 26; ring++) {
+      const rad = ring * 0.12;
+      for (let i = 0; i < 16; i++) {
+        const a = (i / 16) * Math.PI * 2;
+        const nx = x + Math.cos(a) * rad, nz = z + Math.sin(a) * rad;
+        if (!this.blocked(nx, nz, r)) return { x: nx, z: nz };
+      }
+    }
+    return { x, z };
   }
 
   // --------------------------------------------------------------- cameras
@@ -309,6 +346,9 @@ export class Game {
   }
 
   moveWithCollision(x, z, dx, dz, r, self) {
+    // Already overlapping something: take any move that reduces the overlap
+    // rather than refusing every direction, which would pin the actor forever.
+    if (this.blocked(x, z, r)) return { x: x + dx, z: z + dz };
     let nx = x + dx, nz = z + dz;
     if (this.blocked(nx, z, r) || this.actorBlocked(nx, z, r, self)) nx = x;
     if (this.blocked(nx, nz, r) || this.actorBlocked(nx, nz, r, self)) nz = z;
@@ -600,6 +640,7 @@ export class Game {
 
   // --------------------------------------------------------------- screens
   start(fromSave) {
+    this.goFullscreen();
     document.querySelector('#title').classList.add('hidden');
     this.ui.showHUD(true);
     this.mode = 'play';
@@ -613,6 +654,22 @@ export class Game {
         'The chain on the front doors will not give.\n\nThere is a service gate in the cellar, the groundskeeper said. It needs power.'
       ), 900);
     }
+  }
+
+  // Called from a tap, which is the only time a browser will grant it. No
+  // orientation lock: the rotate screen covers that, and locking orientation
+  // is what makes viewport reporting unreliable on some Android builds.
+  goFullscreen() {
+    if (!this.touchMode || (this.fsTried || 0) >= 2) return;
+    this.fsTried = (this.fsTried || 0) + 1;
+    try {
+      if (document.fullscreenElement || document.webkitFullscreenElement) return;
+      const el = document.documentElement;
+      const fs = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (!fs) return;
+      const p = fs.call(el);
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) { /* refused */ }
   }
 
   showDeath() {
@@ -689,7 +746,13 @@ export class Game {
 
     // message box first: action advances dialogue
     if (this.ui.talking) {
-      if (inp.consume('action') || inp.consume('fire')) this.ui.advance();
+      // Pushing the stick reads through the text as well as tapping: being
+      // held still by a message box you cannot dismiss is the worst thing
+      // that can happen to a player, so give it more than one exit.
+      const pushing = Math.hypot(inp.move.x, inp.move.y) > 0.45;
+      if (inp.consume('action') || inp.consume('fire') || (pushing && this.ui.sayTime > 0.4)) {
+        this.ui.advance();
+      }
       inp.endFrame();
       this.animateWorld(dt, 0);
       return;

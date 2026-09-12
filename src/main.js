@@ -71,13 +71,56 @@ function showHelp() {
     (root) => { root.querySelector('#hClose').onclick = () => game.ui.closeOverlay(); });
 }
 
+// A thrown frame used to vanish into the console, which on a phone means it
+// vanishes entirely: the game just stops responding with nothing to report.
+let errorShown = false;
+function showError(err) {
+  if (errorShown) return;
+  errorShown = true;
+  const d = document.createElement('div');
+  d.id = 'errbar';
+  d.textContent = String((err && err.message) || err);
+  d.title = 'tap to dismiss';
+  d.onclick = () => d.remove();
+  document.body.appendChild(d);
+}
+addEventListener('error', (e) => showError(e.error || e.message));
+addEventListener('unhandledrejection', (e) => showError(e.reason));
+
+let frames = 0, fpsAt = performance.now(), fps = 0;
 function loop() {
   requestAnimationFrame(loop);
   try {
     game.update();
   } catch (err) {
     console.error(err);
+    showError(err);
   }
+  frames++;
+  const now = performance.now();
+  if (now - fpsAt >= 500) { fps = Math.round(frames * 1000 / (now - fpsAt)); frames = 0; fpsAt = now; }
+  if (dbg) updateDebug();
+}
+
+// ?debug prints live state, so a problem on a device I cannot reach can be
+// reported as facts rather than guessed at.
+const dbg = new URLSearchParams(location.search).has('debug')
+  ? Object.assign(document.body.appendChild(document.createElement('div')), { id: 'dbg' })
+  : null;
+let touchCount = 0;
+if (dbg) addEventListener('touchstart', () => { touchCount++; }, { passive: true, capture: true });
+function updateDebug() {
+  const g = game;
+  dbg.textContent = [
+    `${innerWidth}x${innerHeight} dpr${(devicePixelRatio || 1).toFixed(1)} ${fps}fps`,
+    `mode=${g.mode} gated=${!!g.gated}`,
+    `touchMode=${g.touchMode} touches=${touchCount}`,
+    `touchUI=${!document.getElementById('touch').classList.contains('hidden')}`,
+    `coarse=${matchMedia('(pointer: coarse)').matches} maxPts=${navigator.maxTouchPoints || 0}`,
+    `stick=${g.input.stick.active ? g.input.stick.x.toFixed(2) + ',' + g.input.stick.y.toFixed(2) : 'off'}`,
+    `move=${g.input.move.x.toFixed(2)},${g.input.move.y.toFixed(2)} sp=${g.player.speed.toFixed(2)}`,
+    `pos=${g.player.x.toFixed(1)},${g.player.z.toFixed(1)} room=${g.roomId || '-'}`,
+  ].join('\n');
 }
 
 // Keep the canvas correct when the mobile URL bar shows/hides.

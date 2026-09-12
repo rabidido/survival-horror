@@ -40,7 +40,7 @@ ROOMS.foyer = {
     const floorT = T.marble('#4a4338', '#1c1a17', 3, 4, 5);
     const wallT = T.wallpaper('#2e2a22', '#6b5a35', 12, 4, 1);
     shell(b, 14, 16, 4.6, floorT, wallT, T.wood('#171009', '#2e2011', 13, 3, 3),
-      [op('n', 0), op('w', -2), op('e', 2)]);
+      [op('n', -4.6), op('w', -2), op('e', 2)]);
 
     // grand staircase (decorative, blocked at the top)
     const stepM = mat(T.wood('#241709', '#553619', 8, 2, 1));
@@ -68,7 +68,7 @@ ROOMS.foyer = {
 
     // side tables + pillars
     const pillarM = mat(T.marble('#3b382f', '#15140f', 22, 1, 2));
-    for (const sx of [-1, 1]) for (const pz of [-2.0, 5.0]) {
+    for (const sx of [-1, 1]) for (const pz of [-5.0, 5.0]) {
       b.cyl(sx * 5.6, 0, pz, 0.34, 0.4, 4.6, pillarM, 10);
       b.collider(sx * 5.6, pz, 0.8, 0.8);
     }
@@ -92,13 +92,13 @@ ROOMS.foyer = {
     { zone: [-7, -1.5, 7, 8], pos: [6.0, 3.9, -5.8], look: [-1.0, 1.0, 4.6], fov: 54 },
   ],
   doors: [
-    { side: 'n', at: 0, to: 'hall_e', label: 'Main Corridor' },
+    { side: 'n', at: -4.6, to: 'hall_e', label: 'Main Corridor' },
     { side: 'w', at: -2, to: 'safe_room', label: 'Keeper\u2019s Office' },
     { side: 'e', at: 2, to: 'dining', label: 'Dining Hall' },
   ],
   entries: {
-    start: [0, 5.4, Math.PI],
-    hall_e: [0, -6.2, Math.PI],
+    start: [0, 4.4, Math.PI],
+    hall_e: [-4.6, -6.3, Math.PI],
     safe_room: [-5.2, -2, -Math.PI / 2],
     dining: [5.2, 2, Math.PI / 2],
   },
@@ -211,7 +211,7 @@ ROOMS.dining = {
     { side: 'w', at: 0, to: 'foyer', label: 'Entrance Hall' },
     { side: 'n', at: -2.5, to: 'kitchen', label: 'Scullery' },
   ],
-  entries: { foyer: [-3.9, 0, -Math.PI / 2], kitchen: [-2.5, -5.9, Math.PI] },
+  entries: { foyer: [-3.6, 0.9, -Math.PI / 2], kitchen: [-2.5, -5.9, Math.PI] },
 };
 
 // 4. KITCHEN ----------------------------------------------------------------
@@ -243,8 +243,8 @@ ROOMS.kitchen = {
     b.box(1.2, 0.83, 0.8, 0.5, 0.06, 0.3, mat(T.wood('#3a2a18', '#7a5a30', 78, 1, 1)));
     // shelving + crates
     b.shelf(-4.4, 1.6, 2.4, 2.0, Math.PI / 2);
-    b.crate(3.6, 2.6, 0.8); b.crate(3.6, 2.6 - 0.85, 0.7);
-    b.crate(3.6, 2.6, 0.6).position.y = 0.8 + 0.3;
+    b.crate(4.2, -2.6, 0.8); b.crate(3.5, -2.9, 0.7);
+    b.crate(4.2, -2.6, 0.6).position.y = 0.8 + 0.3;
     b.barrel(-4.1, -1.2, 0.9);
 
     b.decal(0.2, -1.2, 2.0, 22);
@@ -524,7 +524,7 @@ ROOMS.foyer.pickups = [
 ];
 ROOMS.foyer.interactables = [
   {
-    id: 'front_doors', x: 0, z: 6.9, r: 1.8, label: 'Front Doors',
+    id: 'front_doors', x: 0, z: 6.9, r: 1.4, label: 'Front Doors',
     act: (g) => g.say('The doors are wound shut with chain and a padlock the size of a fist.\nWhoever did this did not want anyone leaving through the front.'),
   },
   {
@@ -535,7 +535,7 @@ ROOMS.foyer.interactables = [
     },
   },
   {
-    id: 'stairs', x: 0, z: -5.6, r: 2.0, label: 'Staircase',
+    id: 'stairs', x: 0, z: -5.0, r: 1.6, label: 'Staircase',
     act: (g) => g.say('The upper landing has collapsed into a heap of plaster and joists.\nThere is no way up.'),
   },
 ];
@@ -642,7 +642,7 @@ ROOMS.hall_e.pickups = [
 ];
 ROOMS.hall_e.interactables = [
   {
-    id: 'sec_panel', x: 0.9, z: -8.6, r: 1.6, label: 'Door Panel',
+    id: 'sec_panel', x: 1.3, z: -9.2, r: 1.1, label: 'Door Panel',
     act: (g) => g.say(g.flags.power
       ? 'The panel reads GREEN. The stair door is released.'
       : 'The panel is dead. A strip of tape below it reads: WESTERN WING FEEDS THIS DOOR.'),
