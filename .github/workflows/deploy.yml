@@ -24,11 +24,9 @@ jobs:
       - uses: actions/checkout@v4
       # No build step: the game is plain ES modules plus a vendored three.js,
       # so the repository root is the site.
-      # enablement turns Pages on (build type: GitHub Actions) the first time
-      # this runs, so the repository needs no manual Pages setup.
+      # Pages must already be enabled with Settings -> Pages -> Source:
+      # GitHub Actions. The workflow token cannot create the site itself.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: '.'

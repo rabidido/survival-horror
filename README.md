@@ -91,6 +91,14 @@ encoding when rendering to a render target, so `postfx.js` does both itself.
 
 ## Deploying
 
-Pushing to `main` publishes the site via `.github/workflows/deploy.yml`
-(set **Settings &rarr; Pages &rarr; Source** to *GitHub Actions* once). Because there is no
-build step, serving the repository root from a branch works just as well.
+`.github/workflows/deploy.yml` publishes the site on every push to `main`.
+
+One manual step is needed first, and only once: open **Settings &rarr; Pages** and
+set **Source** to *GitHub Actions*. The workflow's token is not allowed to
+create the Pages site itself, so until this is done every run fails at
+`configure-pages` with `Get Pages site failed ... Not Found`. Afterwards,
+re-run the workflow from the Actions tab (or push any commit) and the site
+goes live at `https://<owner>.github.io/survival-horror/`.
+
+Because there is no build step, serving the repository root from a branch
+works just as well if you would rather not use Actions at all.
