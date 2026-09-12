@@ -68,9 +68,11 @@ ROOMS.foyer = {
 
     // side tables + pillars
     const pillarM = mat(T.marble('#3b382f', '#15140f', 22, 1, 2));
-    for (const sx of [-1, 1]) for (const pz of [-5.0, 5.0]) {
-      b.cyl(sx * 5.6, 0, pz, 0.34, 0.4, 4.6, pillarM, 10);
-      b.collider(sx * 5.6, pz, 0.8, 0.8);
+    // West side only: both fixed cameras sit in the eastern corners, and a
+    // 4.6m pillar half a metre in front of one fills the entire shot.
+    for (const pz of [-5.0, 0.4, 5.0]) {
+      b.cyl(-5.6, 0, pz, 0.34, 0.4, 4.6, pillarM, 10);
+      b.collider(-5.6, pz, 0.8, 0.8);
     }
     b.table(-4.6, 5.6, 1.4, 0.6, 0, mat(T.wood('#2a1b10', '#5c3c22', 15, 2, 1)));
 

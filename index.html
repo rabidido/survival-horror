@@ -6,6 +6,10 @@
 <meta name="theme-color" content="#000000">
 <meta name="description" content="Ashgrove Manor - a browser survival horror in the classic fixed-camera style.">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ashgrove">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>ASHGROVE MANOR</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23090909'/%3E%3Cpath d='M16 4 L26 12 V28 H6 V12 Z' fill='none' stroke='%238c1f1a' stroke-width='2'/%3E%3Crect x='14' y='19' width='4' height='9' fill='%23c8a15a'/%3E%3C/svg%3E">
@@ -36,9 +40,13 @@
 
   <!-- ------------------------------------------------- touch controls -->
   <div id="touch" class="hidden">
-    <div id="stickZone"></div>
-    <div id="stickBase"></div>
-    <div id="stickKnob"></div>
+    <div id="dpad" aria-label="Move">
+      <div id="dUp" class="dcell"><svg viewBox="0 0 24 24"><path d="M12 6l7 10H5z"/></svg></div>
+      <div id="dLeft" class="dcell"><svg viewBox="0 0 24 24"><path d="M6 12l10-7v14z"/></svg></div>
+      <div id="dRight" class="dcell"><svg viewBox="0 0 24 24"><path d="M18 12L8 19V5z"/></svg></div>
+      <div id="dDown" class="dcell"><svg viewBox="0 0 24 24"><path d="M12 18L5 8h14z"/></svg></div>
+      <div id="dHub"></div>
+    </div>
     <div id="buttons">
       <button id="btnInv" class="tbtn small" aria-label="Inventory">BAG</button>
       <button id="btnRun" class="tbtn small" aria-label="Run">RUN</button>
@@ -62,7 +70,10 @@
         <button id="btnNew" class="mbtn">NEW GAME</button>
         <button id="btnContinue" class="mbtn" disabled>CONTINUE</button>
         <button id="btnHelp" class="mbtn ghost">CONTROLS</button>
+        <button id="btnFull" class="mbtn ghost hidden">FULLSCREEN</button>
       </div>
+      <p id="iosHint" class="ios-hint hidden">For fullscreen on iPhone, use
+        <b>Share &rarr; Add to Home Screen</b> and launch it from there.</p>
       <div class="title-foot">Fixed cameras &middot; Tank controls &middot; Landscape</div>
     </div>
   </div>

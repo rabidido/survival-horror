@@ -25,6 +25,39 @@ function boot() {
   btnContinue.onclick = () => game.start(true);
   btnHelp.onclick = () => showHelp();
 
+  // A fullscreen request is only granted from a gesture, and browsers refuse
+  // it often enough that it needs a button of its own. iOS Safari has no
+  // element fullscreen at all, so there we point at Add to Home Screen, which
+  // launches the manifest's fullscreen display mode instead.
+  const el = document.documentElement;
+  const canFull = !!(el.requestFullscreen || el.webkitRequestFullscreen);
+  const standalone = matchMedia('(display-mode: fullscreen)').matches
+    || matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const btnFull = document.getElementById('btnFull');
+  const iosHint = document.getElementById('iosHint');
+  const isTouch = (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window;
+  if (!standalone) {
+    if (canFull) {
+      btnFull.classList.remove('hidden');
+      btnFull.onclick = () => {
+        const fs = el.requestFullscreen || el.webkitRequestFullscreen;
+        try {
+          const p = fs.call(el);
+          if (p && p.catch) p.catch(() => {});
+        } catch (e) { /* refused */ }
+      };
+    } else if (isTouch) {
+      iosHint.classList.remove('hidden');
+    }
+  }
+  const syncFull = () => {
+    const on = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    btnFull.textContent = on ? 'EXIT FULLSCREEN' : 'FULLSCREEN';
+    if (on) btnFull.onclick = () => (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+  };
+  addEventListener('fullscreenchange', syncFull);
+  addEventListener('webkitfullscreenchange', syncFull);
+
   // wording depends on whether there is a device to turn
   const rt = document.getElementById('rotateText');
   if (rt && !matchMedia('(pointer: coarse)').matches) {
@@ -37,9 +70,10 @@ function boot() {
 function showHelp() {
   const touch = matchMedia('(pointer: coarse)').matches;
   const rows = touch ? [
-    ['Stick up', 'Walk forward. Push fully forward to run.'],
-    ['Stick down', 'Back away, slowly'],
-    ['Stick left/right', 'Turn on the spot'],
+    ['D-pad up', 'Walk forward'],
+    ['D-pad down', 'Back away, slowly'],
+    ['D-pad left/right', 'Turn on the spot'],
+    ['RUN', 'Hold to run'],
     ['RUN + down', 'Quick turn \u2014 spin 180\u00b0'],
     ['ACT', 'Examine, take, open doors, advance dialogue'],
     ['AIM', 'Hold to raise your weapon and lock on'],

@@ -70,14 +70,19 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block;backgro
 
 /* ------------------------------------------------------------- touch */
 #touch{position:absolute;inset:0;pointer-events:none;}
-#stickZone{position:absolute;left:0;bottom:0;width:52%;height:62%;pointer-events:auto;}
-#stickBase,#stickKnob{position:absolute;border-radius:50%;pointer-events:none;
-  transform:translate(-50%,-50%);opacity:0;transition:opacity .15s;}
-#stickBase{width:118px;height:118px;border:1px solid rgba(210,200,180,.28);
-  background:radial-gradient(circle,rgba(255,255,255,.05),rgba(0,0,0,.18));}
-#stickKnob{width:52px;height:52px;border:1px solid rgba(210,200,180,.5);
-  background:rgba(210,200,180,.16);opacity:0;}
-#stickBase[style*="opacity: 0.85"]+#stickKnob{opacity:.8;}
+#dpad{position:absolute;left:calc(18px + env(safe-area-inset-left));
+  bottom:calc(16px + env(safe-area-inset-bottom));
+  width:158px;height:158px;pointer-events:auto;touch-action:none;
+  display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);
+  border-radius:14px;background:rgba(10,10,11,.4);border:1px solid rgba(210,200,180,.16);}
+.dcell{display:flex;align-items:center;justify-content:center;pointer-events:none;
+  border:1px solid rgba(210,200,180,.26);background:rgba(16,16,17,.55);border-radius:8px;margin:2px;}
+.dcell svg{width:26px;height:26px;fill:rgba(216,210,196,.62);}
+.dcell.on{background:rgba(200,190,165,.34);border-color:rgba(230,220,195,.8);}
+.dcell.on svg{fill:#fff;}
+#dUp{grid-area:1/2/2/3;} #dLeft{grid-area:2/1/3/2;}
+#dRight{grid-area:2/3/3/4;} #dDown{grid-area:3/2/4/3;}
+#dHub{grid-area:2/2/3/3;pointer-events:none;}
 
 #buttons{position:absolute;right:calc(14px + env(safe-area-inset-right));
   bottom:calc(16px + env(safe-area-inset-bottom));display:grid;gap:10px;
@@ -204,6 +209,9 @@ h1 span{color:var(--blood);}
 @media (max-height:760px), (max-width:430px){
   .tbtn{width:62px;height:62px;font-size:11px;}
   .tbtn.small{width:46px;height:46px;font-size:9.5px;}
+  #dpad{width:132px;height:132px;left:calc(14px + env(safe-area-inset-left));
+        bottom:calc(12px + env(safe-area-inset-bottom));}
+  .dcell svg{width:22px;height:22px;}
   #buttons{gap:8px;}
   #prompt{bottom:38%;font-size:11px;padding:6px 10px;}
   #statusPanel{min-width:120px;padding:4px 7px 3px;}
@@ -215,7 +223,6 @@ h1 span{color:var(--blood);}
 }
 @media (orientation:portrait){
   #buttons{bottom:calc(12px + env(safe-area-inset-bottom));}
-  #stickZone{height:52%;}
 }
 
 /* ------------------------------------------------ landscape-only gate */
@@ -264,3 +271,7 @@ h1 span{color:var(--blood);}
 #dbg{position:fixed;left:4px;bottom:4px;z-index:98;pointer-events:none;
   font-family:var(--ui);font-size:9.5px;line-height:1.35;color:#8fe08f;
   background:rgba(0,0,0,.72);padding:5px 7px;white-space:pre;border:1px solid rgba(140,224,140,.3);}
+
+.ios-hint{font-size:10.5px;line-height:1.7;color:#6f6a60;margin:16px auto 0;max-width:330px;}
+.ios-hint b{color:var(--amber);font-weight:400;}
+@media (max-height:480px){ .ios-hint{margin-top:9px;font-size:9.5px;} }

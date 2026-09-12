@@ -172,8 +172,9 @@ export class Game {
       this.input.keys.clear();
       this.input.aimHeld = false;
       this.input.runHeld = false;
-      this.input.stick.active = false;
-      this.input.stick.x = this.input.stick.y = 0;
+      this.input.pad.active = false;
+      this.input.pad.up = this.input.pad.down = false;
+      this.input.pad.left = this.input.pad.right = false;
       this.clock.getDelta();
     }
   }
@@ -348,7 +349,17 @@ export class Game {
   moveWithCollision(x, z, dx, dz, r, self) {
     // Already overlapping something: take any move that reduces the overlap
     // rather than refusing every direction, which would pin the actor forever.
-    if (this.blocked(x, z, r)) return { x: x + dx, z: z + dz };
+    if (this.blocked(x, z, r)) {
+      // Already overlapping something. Do not honour the input -- that would
+      // be a licence to walk through walls. Push toward the nearest free
+      // ground instead, so being wedged is temporary rather than permanent.
+      const free = this.resolveSpawn(x, z, r);
+      const ox = free.x - x, oz = free.z - z;
+      const len = Math.hypot(ox, oz);
+      if (len < 1e-6) return { x, z };
+      const step = Math.min(len, Math.max(0.04, Math.hypot(dx, dz)));
+      return { x: x + (ox / len) * step, z: z + (oz / len) * step };
+    }
     let nx = x + dx, nz = z + dz;
     if (this.blocked(nx, z, r) || this.actorBlocked(nx, z, r, self)) nx = x;
     if (this.blocked(nx, nz, r) || this.actorBlocked(nx, nz, r, self)) nz = z;
@@ -746,10 +757,10 @@ export class Game {
 
     // message box first: action advances dialogue
     if (this.ui.talking) {
-      // Pushing the stick reads through the text as well as tapping: being
+      // Pushing a direction reads through the text as well as tapping: being
       // held still by a message box you cannot dismiss is the worst thing
       // that can happen to a player, so give it more than one exit.
-      const pushing = Math.hypot(inp.move.x, inp.move.y) > 0.45;
+      const pushing = inp.move.x !== 0 || inp.move.y !== 0;
       if (inp.consume('action') || inp.consume('fire') || (pushing && this.ui.sayTime > 0.4)) {
         this.ui.advance();
       }
@@ -801,21 +812,21 @@ export class Game {
       if (inp.consume('fire')) this.fire();
     } else {
       // back + run performs a 180, the standard escape from something at your heels
-      if (fwdIn < -0.5 && inp.runHeld && !this.qtLatch) {
+      if (fwdIn < 0 && inp.runHeld && !this.qtLatch) {
         this.qtLatch = true;
         this.quickTurn = 0;
         this.qtFrom = p.angle;
       } else {
-        if (fwdIn > -0.3 || !inp.runHeld) this.qtLatch = false;
+        if (fwdIn >= 0 || !inp.runHeld) this.qtLatch = false;
 
-        if (Math.abs(turnIn) > 0.12) p.angle += turnIn * TURN_RATE * dt * Math.min(1, Math.abs(turnIn) * 1.4);
+        if (turnIn) p.angle += turnIn * TURN_RATE * dt;
 
         let sp = 0;
-        if (fwdIn > 0.15) sp = (inp.running ? RUN : WALK) * Math.min(1, Math.max(0.45, fwdIn));
+        if (fwdIn > 0) sp = inp.running ? RUN : WALK;
         // qtLatch is still set right after a quick turn, which suppresses the
         // backstep until Back is released -- otherwise finishing the spin with
         // the key still down shuffles you backwards into what you turned from.
-        else if (fwdIn < -0.15 && !this.qtLatch) sp = -BACKSTEP * Math.min(1, Math.max(0.5, -fwdIn));
+        else if (fwdIn < 0 && !this.qtLatch) sp = -BACKSTEP;
         p.speed = sp;
         if (sp !== 0) {
           const fx = Math.sin(p.angle), fz = Math.cos(p.angle);

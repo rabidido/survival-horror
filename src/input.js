@@ -6,7 +6,7 @@ export class Input {
     this.aimHeld = false;
     this.pressed = new Set();       // edge-triggered actions this frame
     this.keys = new Set();
-    this.stick = { active: false, id: null, ox: 0, oy: 0, x: 0, y: 0 };
+    this.pad = { active: false, id: null, up: false, down: false, left: false, right: false };
     this.pointerLockMove = null;
     this.root = root;
     this.touch = false;
@@ -54,49 +54,73 @@ export class Input {
   }
 
   _bindTouch(root) {
-    const zone = root.querySelector('#stickZone');
-    const knob = root.querySelector('#stickKnob');
-    const base = root.querySelector('#stickBase');
-    const R = 56;
+    const pad = root.querySelector('#dpad');
+    const cells = {
+      up: root.querySelector('#dUp'), down: root.querySelector('#dDown'),
+      left: root.querySelector('#dLeft'), right: root.querySelector('#dRight'),
+    };
+
+    // Digital pad: the touch position picks one of eight directions, so a
+    // thumb can slide between them and hold two at once (walk while turning),
+    // but every direction is full-on or off. No partial deflection.
+    const DEAD = 0.30;           // fraction of the pad radius that reads as centre
+    const setDirs = (x, y) => {
+      this.pad.up = y > 0; this.pad.down = y < 0;
+      this.pad.left = x < 0; this.pad.right = x > 0;
+      cells.up.classList.toggle('on', this.pad.up);
+      cells.down.classList.toggle('on', this.pad.down);
+      cells.left.classList.toggle('on', this.pad.left);
+      cells.right.classList.toggle('on', this.pad.right);
+    };
+    const clearDirs = () => setDirs(0, 0);
+
+    const sample = (clientX, clientY) => {
+      const r = pad.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const rad = Math.min(r.width, r.height) / 2;
+      const dx = (clientX - cx) / rad, dy = (cy - clientY) / rad;   // dy up-positive
+      const len = Math.hypot(dx, dy);
+      if (len < DEAD) return clearDirs();
+      // snap to the nearest of eight compass directions
+      const oct = Math.round(Math.atan2(dy, dx) / (Math.PI / 4));
+      const dirs = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+      const d = dirs[((oct % 8) + 8) % 8];
+      setDirs(d[0], d[1]);
+    };
 
     const start = (e) => {
       this.touch = true;
       if (this.onGesture) this.onGesture();
       const t = e.changedTouches ? e.changedTouches[0] : e;
-      this.stick.active = true;
-      this.stick.id = t.identifier === undefined ? 'mouse' : t.identifier;
-      this.stick.ox = t.clientX; this.stick.oy = t.clientY;
-      base.style.left = t.clientX + 'px'; base.style.top = t.clientY + 'px';
-      base.style.opacity = '0.85';
-      knob.style.left = t.clientX + 'px'; knob.style.top = t.clientY + 'px';
+      this.pad.id = t.identifier === undefined ? 'mouse' : t.identifier;
+      this.pad.active = true;
+      sample(t.clientX, t.clientY);
       e.preventDefault();
     };
     const move = (e) => {
-      if (!this.stick.active) return;
+      if (!this.pad.active) return;
       const list = e.changedTouches ? Array.from(e.changedTouches) : [e];
-      const t = list.find(x => (x.identifier === undefined ? 'mouse' : x.identifier) === this.stick.id);
+      const t = list.find(x => (x.identifier === undefined ? 'mouse' : x.identifier) === this.pad.id);
       if (!t) return;
-      let dx = t.clientX - this.stick.ox, dy = t.clientY - this.stick.oy;
-      const len = Math.hypot(dx, dy);
-      if (len > R) { dx = dx / len * R; dy = dy / len * R; }
-      this.stick.x = dx / R; this.stick.y = dy / R;
-      knob.style.left = (this.stick.ox + dx) + 'px';
-      knob.style.top = (this.stick.oy + dy) + 'px';
+      sample(t.clientX, t.clientY);
       e.preventDefault();
     };
     const end = (e) => {
       const list = e.changedTouches ? Array.from(e.changedTouches) : [e];
-      const t = list.find(x => (x.identifier === undefined ? 'mouse' : x.identifier) === this.stick.id);
+      const t = list.find(x => (x.identifier === undefined ? 'mouse' : x.identifier) === this.pad.id);
       if (!t && e.changedTouches) return;
-      this.stick.active = false; this.stick.x = this.stick.y = 0;
-      base.style.opacity = '0';
-      knob.style.left = base.style.left; knob.style.top = base.style.top;
+      this.pad.active = false;
+      this.pad.id = null;
+      clearDirs();
     };
 
-    zone.addEventListener('touchstart', start, { passive: false });
-    zone.addEventListener('touchmove', move, { passive: false });
-    zone.addEventListener('touchend', end);
-    zone.addEventListener('touchcancel', end);
+    pad.addEventListener('touchstart', start, { passive: false });
+    pad.addEventListener('touchmove', move, { passive: false });
+    pad.addEventListener('touchend', end);
+    pad.addEventListener('touchcancel', end);
+    pad.addEventListener('mousedown', start);
+    addEventListener('mousemove', (e) => { if (this.pad.active) move(e); });
+    addEventListener('mouseup', (e) => { if (this.pad.active) end(e); });
 
     // Hold-style buttons
     const holdBtn = (id, set) => {
@@ -137,14 +161,18 @@ export class Input {
     if (this.keys.has('KeyS') || this.keys.has('ArrowDown')) y -= 1;
     if (this.keys.has('KeyD') || this.keys.has('ArrowRight')) x += 1;
     if (this.keys.has('KeyA') || this.keys.has('ArrowLeft')) x -= 1;
-    const kl = Math.hypot(x, y);
-    if (kl > 1) { x /= kl; y /= kl; }
-    if (this.stick.active) { x = this.stick.x; y = -this.stick.y; }
-    this.move.x = x; this.move.y = y;
-    this.magnitude = Math.min(1, Math.hypot(x, y));
-    // Pushing the stick fully FORWARD runs. Full deflection backwards must not
-    // count, or every backstep would trigger the back+run quick turn.
-    this.running = this.runHeld || (this.stick.active && this.move.y > 0.8);
+    if (this.pad.active) {
+      if (this.pad.up) y += 1;
+      if (this.pad.down) y -= 1;
+      if (this.pad.right) x += 1;
+      if (this.pad.left) x -= 1;
+    }
+    // Digital: every direction is fully on or fully off, never in between,
+    // so the keyboard and the pad produce exactly the same input.
+    this.move.x = Math.sign(x);
+    this.move.y = Math.sign(y);
+    this.magnitude = Math.max(Math.abs(this.move.x), Math.abs(this.move.y));
+    this.running = this.runHeld;
     return this.move;
   }
 }

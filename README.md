@@ -27,13 +27,18 @@ Movement is **tank controls**, as in the games this is modelled on: left and
 right turn you on the spot, forward and back move along whatever direction you
 are facing. Your input never changes meaning when the camera cuts.
 
+Input is **digital**, not analog. On touch that means a D-pad rather than a
+stick: every direction is fully on or fully off, and the keyboard and the pad
+produce exactly the same values. The pad reads eight directions, so a thumb can
+hold forward and a turn together, and slide between them without lifting.
+
 | Desktop | Touch | Action |
 | --- | --- | --- |
-| `W` / up | stick up | Walk forward |
-| `S` / down | stick down | Back away, slowly |
-| `A` `D` / left right | stick left/right | Turn on the spot |
-| `Shift` | push the stick fully forward | Run |
-| `Shift` + down | **RUN** + stick down | Quick turn &mdash; spin 180&deg; |
+| `W` / up | D-pad up | Walk forward |
+| `S` / down | D-pad down | Back away, slowly |
+| `A` `D` / left right | D-pad left/right | Turn on the spot |
+| `Shift` | **RUN** | Run |
+| `Shift` + down | **RUN** + D-pad down | Quick turn &mdash; spin 180&deg; |
 | `E` / `Enter` | **ACT** | Examine, take, open doors, advance dialogue |
 | hold `Space` | hold **AIM** | Raise your weapon; it locks on to the nearest target |
 | `J` / `X` | **FIRE** | Shoot or swing |
