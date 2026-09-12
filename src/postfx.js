@@ -55,8 +55,8 @@ void main(){
   col = toSRGB(col);
 
   // vignette
-  float vig = 1.0 - smoothstep(0.16, 0.55, r2 * uVignette);
-  col *= mix(0.22, 1.0, vig);
+  float vig = 1.0 - smoothstep(0.22, 0.58, r2 * uVignette);
+  col *= mix(0.44, 1.0, vig);
 
   // animated film grain
   float g = hash(uv * uRes + fract(uTime) * 137.0) - 0.5;
@@ -83,8 +83,8 @@ export class PostFX {
       tDiffuse: { value: this.target.texture },
       uTime: { value: 0 },
       uGrain: { value: 0.085 },
-      uVignette: { value: 1.25 },
-      uExposure: { value: 1.25 },
+      uVignette: { value: 1.15 },
+      uExposure: { value: 1.45 },
       uDamage: { value: 0 },
       uFade: { value: 0 },
       uRes: { value: new THREE.Vector2(size.x, size.y) },

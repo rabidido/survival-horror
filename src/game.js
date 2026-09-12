@@ -135,10 +135,12 @@ export class Game {
     };
     this.playerLight = new THREE.PointLight(0xbfd0e0, 10, 6.0, 2);
     this.playerLight.position.set(0, 1.6, 0);
-    this.torch = new THREE.SpotLight(0xffeccf, 0, 11, 0.5, 0.55, 1.4);
-    this.torch.position.set(0, 1.25, 0.1);
+    // Aimed well below the horizontal: a beam pointed straight ahead skims the
+    // floor and walls at a grazing angle and lights almost nothing.
+    this.torch = new THREE.SpotLight(0xffeccf, 0, 16, 0.82, 0.55, 1.15);
+    this.torch.position.set(0, 1.4, 0.25);
     this.torchTarget = new THREE.Object3D();
-    this.torchTarget.position.set(0, 0.9, 6);
+    this.torchTarget.position.set(0, -0.55, 4.6);
     this.player.group.add(this.torch, this.torchTarget);
     this.fillOffset = new THREE.Vector3();
     this.torch.target = this.torchTarget;
@@ -203,15 +205,15 @@ export class Game {
     this.scene.fog = new THREE.Fog(def.fog[0], def.fog[1], def.fog[2]);
     this.scene.background = new THREE.Color(def.fog[0]);
     if (this.ambient) this.scene.remove(this.ambient);
-    this.ambient = new THREE.AmbientLight(def.ambient, def.ambientI * 6.0);
+    this.ambient = new THREE.AmbientLight(def.ambient, def.ambientI * 7.4);
     this.scene.add(this.ambient);
-    this.torch.intensity = def.dark ? 42 : 0;
+    this.torch.intensity = def.dark ? 500 : 0;
     this.playerLight.intensity = def.dark ? 4.0 : 6.5;
     // lights in an unpowered cellar only come on once the generator runs
     if (def.dark && this.flags.power) {
       for (const l of b.lights) l.intensity *= 1.0;
     } else if (def.dark) {
-      for (const l of b.lights) l.intensity *= 0.22;
+      for (const l of b.lights) l.intensity *= 0.3;
     }
 
     // pickups

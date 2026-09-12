@@ -7,9 +7,16 @@ import * as T from './textures.js';
 // overall exposure of the world.
 export const LIGHT_SCALE = 7.0;
 
+// The procedural textures are painted dark and then darkened again by the
+// grime pass, so unlit corners bottom out near black no matter how much light
+// is added. ALBEDO lifts the surface response itself, which brightens the
+// shadows without blowing out the lamp pools.
+const ALBEDO = 1.42;
+
 export function mat(map, opts) {
   return new THREE.MeshPhongMaterial(Object.assign({
-    map, shininess: 0, specular: 0x000000, color: 0xffffff,
+    map, shininess: 0, specular: 0x000000,
+    color: new THREE.Color().setScalar(ALBEDO),
   }, opts || {}));
 }
 
