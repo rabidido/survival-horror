@@ -133,12 +133,17 @@ export class Game {
   // The game is built for landscape: every camera angle is composed wide, and
   // the touch controls need the width. In portrait we hold play rather than
   // present a broken frame.
+  //
+  // Deliberately re-derived every frame rather than on transitions, and it
+  // fails open: if the rotate screen is missing from the page, nothing is
+  // gated. A hold with no visible explanation is indistinguishable from the
+  // game being broken, so it must not be reachable.
   updateOrientationGate() {
-    const portrait = innerWidth < innerHeight;
-    if (portrait === !!this.gated) return;
+    if (this.rotateEl === undefined) this.rotateEl = document.getElementById('rotate');
+    const portrait = !!this.rotateEl && innerWidth < innerHeight;
+    if (this.rotateEl) this.rotateEl.classList.toggle('hidden', !portrait);
     this.gated = portrait;
-    const el = document.getElementById('rotate');
-    if (el) el.classList.toggle('hidden', !portrait);
+
     if (portrait) {
       if (this.mode === 'play') this.mode = 'gated';
     } else if (this.mode === 'gated') {
@@ -595,7 +600,6 @@ export class Game {
 
   // --------------------------------------------------------------- screens
   start(fromSave) {
-    this.requestLandscape();
     document.querySelector('#title').classList.add('hidden');
     this.ui.showHUD(true);
     this.mode = 'play';
@@ -609,30 +613,6 @@ export class Game {
         'The chain on the front doors will not give.\n\nThere is a service gate in the cellar, the groundskeeper said. It needs power.'
       ), 900);
     }
-  }
-
-  // Android honours this inside fullscreen; iOS ignores both, which is what
-  // the rotate screen is for. Every call is best effort.
-  requestLandscape() {
-    if (!this.touchMode) return;
-    try {
-      const el = document.documentElement;
-      const fs = el.requestFullscreen || el.webkitRequestFullscreen;
-      if (fs) {
-        const p = fs.call(el);
-        if (p && p.then) p.then(() => this.lockLandscape()).catch(() => {});
-        else this.lockLandscape();
-      }
-    } catch (e) { /* not permitted */ }
-  }
-
-  lockLandscape() {
-    try {
-      if (screen.orientation && screen.orientation.lock) {
-        const p = screen.orientation.lock('landscape');
-        if (p && p.catch) p.catch(() => {});
-      }
-    } catch (e) { /* unsupported */ }
   }
 
   showDeath() {
