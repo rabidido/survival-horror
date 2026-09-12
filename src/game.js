@@ -105,26 +105,52 @@ export class Game {
   // ------------------------------------------------------------------ setup
   resize() {
     const w = innerWidth, h = innerHeight;
+    this.updateOrientationGate();
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.applyFov();
     this.post.setSize(w, h);
   }
 
-  // Camera angles are framed for a widescreen view. On narrower screens
-  // (phones held upright) widen vertically so the horizontal framing -- which
-  // is what the shot was composed for -- is preserved instead of cropped.
+  // The camera angles are composed at REF_ASPECT. Rather than let a wider or
+  // narrower window change what the shot contains, derive the vertical field
+  // of view from a bounded horizontal one:
+  //   narrower than REF -> widen vertically, so the composed width still fits
+  //   up to MAX_ASPECT  -> show the extra width, the shot still reads
+  //   beyond MAX_ASPECT -> stop widening, or a phone held sideways (2.2:1)
+  //                        splays every room out into a fish-eye
   applyFov() {
     const base = this.baseFov || 52;
-    const BASE_ASPECT = 1.6;
-    let fov = base;
-    if (this.camera.aspect < BASE_ASPECT) {
-      const halfH = Math.tan(THREE.MathUtils.degToRad(base) / 2);
-      fov = THREE.MathUtils.radToDeg(2 * Math.atan(halfH * BASE_ASPECT / this.camera.aspect));
-      fov = Math.min(fov, 88);
-    }
-    this.camera.fov = fov;
+    const REF_ASPECT = 1.7, MAX_ASPECT = 1.95;
+    const a = Math.max(0.2, this.camera.aspect);
+    const halfV = THREE.MathUtils.degToRad(base) / 2;
+    const halfH = Math.atan(Math.tan(halfV) * THREE.MathUtils.clamp(a, REF_ASPECT, MAX_ASPECT));
+    const fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(halfH) / a));
+    this.camera.fov = THREE.MathUtils.clamp(fov, 22, 88);
     this.camera.updateProjectionMatrix();
+  }
+
+  // The game is built for landscape: every camera angle is composed wide, and
+  // the touch controls need the width. In portrait we hold play rather than
+  // present a broken frame.
+  updateOrientationGate() {
+    const portrait = innerWidth < innerHeight;
+    if (portrait === !!this.gated) return;
+    this.gated = portrait;
+    const el = document.getElementById('rotate');
+    if (el) el.classList.toggle('hidden', !portrait);
+    if (portrait) {
+      if (this.mode === 'play') this.mode = 'gated';
+    } else if (this.mode === 'gated') {
+      this.mode = 'play';
+      // drop anything that was held when the screen turned
+      this.input.keys.clear();
+      this.input.aimHeld = false;
+      this.input.runHeld = false;
+      this.input.stick.active = false;
+      this.input.stick.x = this.input.stick.y = 0;
+      this.clock.getDelta();
+    }
   }
 
   buildPlayer() {
@@ -569,6 +595,7 @@ export class Game {
 
   // --------------------------------------------------------------- screens
   start(fromSave) {
+    this.requestLandscape();
     document.querySelector('#title').classList.add('hidden');
     this.ui.showHUD(true);
     this.mode = 'play';
@@ -582,6 +609,30 @@ export class Game {
         'The chain on the front doors will not give.\n\nThere is a service gate in the cellar, the groundskeeper said. It needs power.'
       ), 900);
     }
+  }
+
+  // Android honours this inside fullscreen; iOS ignores both, which is what
+  // the rotate screen is for. Every call is best effort.
+  requestLandscape() {
+    if (!this.touchMode) return;
+    try {
+      const el = document.documentElement;
+      const fs = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (fs) {
+        const p = fs.call(el);
+        if (p && p.then) p.then(() => this.lockLandscape()).catch(() => {});
+        else this.lockLandscape();
+      }
+    } catch (e) { /* not permitted */ }
+  }
+
+  lockLandscape() {
+    try {
+      if (screen.orientation && screen.orientation.lock) {
+        const p = screen.orientation.lock('landscape');
+        if (p && p.catch) p.catch(() => {});
+      }
+    } catch (e) { /* unsupported */ }
   }
 
   showDeath() {
@@ -636,6 +687,7 @@ export class Game {
     this.damageFx = Math.max(0, this.damageFx - dt * 1.8);
     this.post.uniforms.uDamage.value = this.damageFx * 0.9;
 
+    this.updateOrientationGate();
     this.input.update();
     if (this.mode === 'play') {
       this.stats.time += dt;

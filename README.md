@@ -5,7 +5,10 @@ angles, deliberate movement, scarce ammunition, locked doors and a couple of
 puzzles standing between you and the way out.
 
 It is a static site &mdash; no server, no build step, no external asset downloads &mdash;
-so it runs straight from GitHub Pages and works on a phone.
+so it runs straight from GitHub Pages and works on a phone, held sideways.
+
+**Landscape only.** Every camera angle is composed wide and the touch controls
+need the width, so in portrait the game holds and asks you to turn the screen.
 
 ## Play
 
@@ -86,9 +89,12 @@ therefore relative to the character rather than the view, a cut mid-stride
 cannot reverse your input &mdash; which is exactly why the games this imitates
 used these controls in the first place.
 
-Angles are composed for a widescreen view. On a narrow screen the camera widens
-its vertical field of view to preserve the horizontal framing rather than
-cropping it, so portrait phones still see the whole shot.
+Angles are composed at a reference aspect of 1.7. Rather than let the window
+shape change what a shot contains, the vertical field of view is derived from a
+horizontal one that is clamped: narrower windows widen vertically so the
+composed width still fits, wider ones show some extra, and past 1.95 the
+widening stops &mdash; otherwise a phone held sideways, at better than 2.1:1,
+splays every room out into a fish-eye.
 
 ### Lighting
 

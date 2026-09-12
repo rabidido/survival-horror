@@ -25,6 +25,12 @@ function boot() {
   btnContinue.onclick = () => game.start(true);
   btnHelp.onclick = () => showHelp();
 
+  // wording depends on whether there is a device to turn
+  const rt = document.getElementById('rotateText');
+  if (rt && !matchMedia('(pointer: coarse)').matches) {
+    rt.textContent = 'Ashgrove Manor is played in landscape. Make the window wider than it is tall.';
+  }
+
   loop();
 }
 

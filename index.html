@@ -63,11 +63,28 @@
         <button id="btnContinue" class="mbtn" disabled>CONTINUE</button>
         <button id="btnHelp" class="mbtn ghost">CONTROLS</button>
       </div>
-      <div class="title-foot">Fixed cameras &middot; Tank controls &middot; Playable on touch</div>
+      <div class="title-foot">Fixed cameras &middot; Tank controls &middot; Landscape</div>
     </div>
   </div>
 
   <div id="loading" class="screen hidden"><div class="load-inner">LOADING<span class="dots">...</span></div></div>
+
+  <!-- shown whenever the window is taller than it is wide -->
+  <div id="rotate" class="screen hidden">
+    <div class="rotate-inner">
+      <svg viewBox="0 0 120 120" width="104" height="104" aria-hidden="true">
+        <rect x="34" y="16" width="52" height="88" rx="7" fill="none" stroke="#8a8275" stroke-width="3"/>
+        <rect x="41" y="27" width="38" height="66" fill="rgba(200,161,90,.12)"/>
+        <circle cx="60" cy="99" r="2.4" fill="#8a8275"/>
+        <path d="M96 46a40 40 0 0 1-9 30" fill="none" stroke="#c8a15a" stroke-width="3.4"
+              stroke-linecap="round"/>
+        <path d="M80 74l8 6 5-9" fill="none" stroke="#c8a15a" stroke-width="3.4"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h2>TURN THE SCREEN</h2>
+      <p id="rotateText">Ashgrove Manor is played in landscape.</p>
+    </div>
+  </div>
 </div>
 <script type="module" src="src/main.js"></script>
 </body>
