@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="Ashgrove Manor - a browser survival horror in the classic fixed-camera style.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ASHGROVE MANOR</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23090909'/%3E%3Cpath d='M16 4 L26 12 V28 H6 V12 Z' fill='none' stroke='%238c1f1a' stroke-width='2'/%3E%3Crect x='14' y='19' width='4' height='9' fill='%23c8a15a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="gl"></canvas>
+
+  <!-- ------------------------------------------------- HUD -->
+  <div id="hud" class="hidden">
+    <div id="topbar">
+      <div id="roomName"></div>
+    </div>
+    <div id="statusPanel">
+      <div id="condition">FINE</div>
+      <div id="ekg"><canvas id="ekgCanvas" width="132" height="30"></canvas></div>
+    </div>
+    <div id="weaponPanel">
+      <div id="weaponName">KNIFE</div>
+      <div id="ammoCount">&mdash;</div>
+    </div>
+    <div id="prompt" class="hidden"><span id="promptKey">E</span><span id="promptText"></span></div>
+    <div id="subtitle" class="hidden"><p id="subtitleText"></p><span id="subtitleMore">&#9662;</span></div>
+    <div id="reticle" class="hidden"><i></i></div>
+    <div id="toast"></div>
+  </div>
+
+  <!-- ------------------------------------------------- touch controls -->
+  <div id="touch" class="hidden">
+    <div id="stickZone"></div>
+    <div id="stickBase"></div>
+    <div id="stickKnob"></div>
+    <div id="buttons">
+      <button id="btnInv" class="tbtn small" aria-label="Inventory">BAG</button>
+      <button id="btnRun" class="tbtn small" aria-label="Run">RUN</button>
+      <button id="btnAction" class="tbtn" aria-label="Action">ACT</button>
+      <button id="btnAim" class="tbtn" aria-label="Aim">AIM</button>
+      <button id="btnFire" class="tbtn fire" aria-label="Fire">FIRE</button>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------- overlays -->
+  <div id="overlay" class="hidden"></div>
+
+  <!-- title -->
+  <div id="title" class="screen">
+    <div class="title-inner">
+      <div class="title-sub">A SURVIVAL HORROR</div>
+      <h1>ASHGROVE<br><span>MANOR</span></h1>
+      <div class="title-rule"></div>
+      <p class="title-blurb">The doors are chained. The lights are out.<br>Find a way into the cellar, and out of the grounds.</p>
+      <div class="title-menu">
+        <button id="btnNew" class="mbtn">NEW GAME</button>
+        <button id="btnContinue" class="mbtn" disabled>CONTINUE</button>
+        <button id="btnHelp" class="mbtn ghost">CONTROLS</button>
+      </div>
+      <div class="title-foot">Fixed camera &middot; Tank-free controls &middot; Playable on touch</div>
+    </div>
+  </div>
+
+  <div id="loading" class="screen hidden"><div class="load-inner">LOADING<span class="dots">...</span></div></div>
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
