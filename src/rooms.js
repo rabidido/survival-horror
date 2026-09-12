@@ -328,10 +328,11 @@ ROOMS.hall_e = {
     const beam = mat(T.wood('#1a1208', '#3a2712', 95, 1, 1));
     for (let i = -4; i <= 4; i++) b.box(0, 3.2, i * 2.2, 5.2, 0.2, 0.24, beam);
 
-    // sconces
-    for (let i = -3; i <= 3; i += 2) {
-      b.fixture(-2.3, 2.2, i * 2.4, 0xffb066);
-      b.lamp(-2.1, 2.2, i * 2.4, 0xffa860, 4.5, 7);
+    // sconces, alternating walls so neither side of the shot goes black
+    for (let i = -4; i <= 4; i++) {
+      const sx = i % 2 ? 1 : -1;
+      b.fixture(sx * 2.3, 2.2, i * 2.2, 0xffb066).scale.setScalar(0.6);
+      b.lamp(sx * 2.05, 2.2, i * 2.2, 0xffa860, 3.6, 7);
     }
     // security door (north) frame
     const steel = mat(T.metal('#454b48', 96, 2, 1));
