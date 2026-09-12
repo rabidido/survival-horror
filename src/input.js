@@ -133,8 +133,9 @@ export class Input {
     if (this.stick.active) { x = this.stick.x; y = -this.stick.y; }
     this.move.x = x; this.move.y = y;
     this.magnitude = Math.min(1, Math.hypot(x, y));
-    // Full stick deflection on touch counts as running.
-    this.running = this.runHeld || (this.stick.active && this.magnitude > 0.82);
+    // Pushing the stick fully FORWARD runs. Full deflection backwards must not
+    // count, or every backstep would trigger the back+run quick turn.
+    this.running = this.runHeld || (this.stick.active && this.move.y > 0.8);
     return this.move;
   }
 }

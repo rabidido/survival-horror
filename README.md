@@ -20,10 +20,17 @@ Opening the file directly with `file://` will not work: the game uses ES modules
 
 ## Controls
 
+Movement is **tank controls**, as in the games this is modelled on: left and
+right turn you on the spot, forward and back move along whatever direction you
+are facing. Your input never changes meaning when the camera cuts.
+
 | Desktop | Touch | Action |
 | --- | --- | --- |
-| `W A S D` / arrows | drag the left half of the screen | Move (relative to the camera) |
-| `Shift` | push the stick all the way | Run |
+| `W` / up | stick up | Walk forward |
+| `S` / down | stick down | Back away, slowly |
+| `A` `D` / left right | stick left/right | Turn on the spot |
+| `Shift` | push the stick fully forward | Run |
+| `Shift` + down | **RUN** + stick down | Quick turn &mdash; spin 180&deg; |
 | `E` / `Enter` | **ACT** | Examine, take, open doors, advance dialogue |
 | hold `Space` | hold **AIM** | Raise your weapon; it locks on to the nearest target |
 | `J` / `X` | **FIRE** | Shoot or swing |
@@ -74,9 +81,10 @@ this repository &mdash; the only third-party code is a vendored copy of three.js
 ### Fixed cameras
 
 Each room declares camera angles with a zone rectangle. When the player walks
-into a zone the camera cuts to that angle. Movement stays relative to the
-camera basis in use when the stick was pushed, so a camera cut mid-stride does
-not send you back the way you came.
+into a zone the camera cuts to that angle. Because movement is tank style and
+therefore relative to the character rather than the view, a cut mid-stride
+cannot reverse your input &mdash; which is exactly why the games this imitates
+used these controls in the first place.
 
 Angles are composed for a widescreen view. On a narrow screen the camera widens
 its vertical field of view to preserve the horizontal framing rather than

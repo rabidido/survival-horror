@@ -12,7 +12,10 @@ import { Input } from './input.js';
 
 const SAVE_KEY = 'ashgrove_save_v1';
 const PLAYER_R = 0.31;
-const WALK = 1.95, RUN = 3.5;
+const WALK = 1.9, RUN = 3.45, BACKSTEP = 1.05;
+const TURN_RATE = 2.7;        // radians/second on the spot
+const AIM_TURN_RATE = 1.5;    // slower while the weapon is up
+const QUICK_TURN_TIME = 0.32; // back + run spins you 180 degrees
 
 class Inventory {
   constructor(size = 8) { this.size = size; this.slots = new Array(size).fill(null); }
@@ -239,8 +242,8 @@ export class Game {
     this.player.x = entry[0]; this.player.z = entry[1]; this.player.angle = entry[2];
     this.player.group.position.set(entry[0], 0, entry[1]);
     this.player.group.rotation.y = entry[2];
-    this.camBasis = null;
-
+    this.quickTurn = null;
+    this.qtLatch = false;
     this.pickCamera(true);
     this.ui.setRoom(def.name);
     this.checkpoint = this.snapshot();
@@ -256,21 +259,12 @@ export class Game {
     }
     if (!found) found = this.activeCam || cams[0];
     if (found !== this.activeCam || force) {
-      if (this.activeCam && !force) this.camSwitched = true;
       this.activeCam = found;
       this.camera.position.set(found.pos[0], found.pos[1], found.pos[2]);
       this.camera.lookAt(found.look[0], found.look[1], found.look[2]);
       this.baseFov = found.fov || 52;
       this.applyFov();
     }
-  }
-
-  cameraBasis() {
-    const f = new THREE.Vector3();
-    this.camera.getWorldDirection(f);
-    f.y = 0; f.normalize();
-    const r = new THREE.Vector3(-f.z, 0, f.x);
-    return { f, r };
   }
 
   // ------------------------------------------------------------- collision
@@ -683,16 +677,25 @@ export class Game {
     const aiming = inp.aimHeld && !this.transitioning;
     this.aiming = aiming;
 
-    // ------------------------------------------------------ movement / aim
-    const basis = this.cameraBasis();
-    if (!this.camBasis || inp.magnitude < 0.2) this.camBasis = basis;
-    const use = inp.magnitude < 0.2 ? basis : this.camBasis;
+    // --------------------------------------------------- tank movement / aim
+    // Left and right rotate on the spot; forward and back move along whatever
+    // direction the character faces. Deliberately camera-independent, so a
+    // camera cut mid-stride never reverses your input.
+    const turnIn = inp.move.x;
+    const fwdIn = inp.move.y;
 
-    if (aiming) {
-      // rooted: strafe input turns the body instead
+    if (this.quickTurn !== null && this.quickTurn !== undefined) {
+      // mid spin: nothing else may happen
+      this.quickTurn += dt / QUICK_TURN_TIME;
+      const k = Math.min(1, this.quickTurn);
+      const e = k * k * (3 - 2 * k);
+      p.angle = this.qtFrom + Math.PI * e;
       p.speed = 0;
-      const turn = inp.move.x;
-      p.angle -= turn * dt * 2.1;
+      if (k >= 1) { this.quickTurn = null; p.angle = this.qtFrom + Math.PI; }
+    } else if (aiming) {
+      // rooted: left/right swings the body, auto-aim finishes the job
+      p.speed = 0;
+      p.angle += turnIn * AIM_TURN_RATE * dt;
       const tgt = this.autoTarget();
       if (tgt) {
         const a = Math.atan2(tgt.x - p.x, tgt.z - p.z);
@@ -700,23 +703,37 @@ export class Game {
       }
       if (inp.consume('fire')) this.fire();
     } else {
-      const mv = new THREE.Vector3()
-        .addScaledVector(use.r, inp.move.x)
-        .addScaledVector(use.f, inp.move.y);
-      const len = mv.length();
-      if (len > 0.08) {
-        mv.multiplyScalar(1 / len);
-        const target = Math.atan2(mv.x, mv.z);
-        const diff = angDiff(p.angle, target);
-        p.angle += Math.max(-dt * 11, Math.min(dt * 11, diff * 9));
-        const sp = (inp.running ? RUN : WALK) * Math.min(1, Math.max(0.35, inp.magnitude));
-        p.speed = sp;
-        const res = this.moveWithCollision(p.x, p.z, mv.x * sp * dt, mv.z * sp * dt, PLAYER_R, this.player);
-        p.x = res.x; p.z = res.z;
+      // back + run performs a 180, the standard escape from something at your heels
+      if (fwdIn < -0.5 && inp.runHeld && !this.qtLatch) {
+        this.qtLatch = true;
+        this.quickTurn = 0;
+        this.qtFrom = p.angle;
       } else {
-        p.speed = 0;
+        if (fwdIn > -0.3 || !inp.runHeld) this.qtLatch = false;
+
+        if (Math.abs(turnIn) > 0.12) p.angle += turnIn * TURN_RATE * dt * Math.min(1, Math.abs(turnIn) * 1.4);
+
+        let sp = 0;
+        if (fwdIn > 0.15) sp = (inp.running ? RUN : WALK) * Math.min(1, Math.max(0.45, fwdIn));
+        // qtLatch is still set right after a quick turn, which suppresses the
+        // backstep until Back is released -- otherwise finishing the spin with
+        // the key still down shuffles you backwards into what you turned from.
+        else if (fwdIn < -0.15 && !this.qtLatch) sp = -BACKSTEP * Math.min(1, Math.max(0.5, -fwdIn));
+        p.speed = sp;
+        if (sp !== 0) {
+          const fx = Math.sin(p.angle), fz = Math.cos(p.angle);
+          const res = this.moveWithCollision(p.x, p.z, fx * sp * dt, fz * sp * dt, PLAYER_R, this.player);
+          p.x = res.x; p.z = res.z;
+        }
       }
       if (inp.consume('fire')) this.fire();
+    }
+
+    // Keep the heading in [-pi, pi] so it cannot drift over a long session.
+    // Not while spinning: the quick turn interpolates from a stored angle.
+    if (this.quickTurn === null || this.quickTurn === undefined) {
+      if (p.angle > Math.PI) p.angle -= Math.PI * 2;
+      else if (p.angle < -Math.PI) p.angle += Math.PI * 2;
     }
 
     // ------------------------------------------------------------ interact
@@ -768,7 +785,7 @@ export class Game {
 
   animateWorld(dt, speed) {
     const p = this.player;
-    p.anim += dt * (speed > 0 ? speed * 2.1 : 1);
+    p.anim += dt * (speed !== 0 ? speed * 2.1 : 1);
     if (p.hurt > 0) poseHumanHurt(p.parts, p.anim);
     else if (p.swing >= 0) {
       poseHumanAim(p.parts, p.anim, 'knife');
@@ -776,7 +793,7 @@ export class Game {
       p.parts.armR.rotation.x = -1.5 + k * 2.1;
       p.parts.chest.rotation.y = -k * 0.5;
     } else if (this.aiming) poseHumanAim(p.parts, p.anim, this.equipped === 'knife' ? 'knife' : 'gun');
-    else if (speed > 0.1) poseHumanWalk(p.parts, p.anim * 2.2, Math.min(1, speed / RUN + 0.45));
+    else if (Math.abs(speed) > 0.1) poseHumanWalk(p.parts, p.anim * 2.2, Math.min(1, Math.abs(speed) / RUN + 0.45));
     else poseHumanIdle(p.parts, p.anim);
 
     p.group.position.x = p.x;

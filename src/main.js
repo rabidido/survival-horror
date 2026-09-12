@@ -31,14 +31,20 @@ function boot() {
 function showHelp() {
   const touch = matchMedia('(pointer: coarse)').matches;
   const rows = touch ? [
-    ['Left half', 'Drag anywhere to move. Push the stick fully to run.'],
+    ['Stick up', 'Walk forward. Push fully forward to run.'],
+    ['Stick down', 'Back away, slowly'],
+    ['Stick left/right', 'Turn on the spot'],
+    ['RUN + down', 'Quick turn \u2014 spin 180\u00b0'],
     ['ACT', 'Examine, take, open doors, advance dialogue'],
     ['AIM', 'Hold to raise your weapon and lock on'],
     ['FIRE', 'Shoot or swing while aiming'],
     ['BAG', 'Inventory, documents and status'],
   ] : [
-    ['W A S D', 'Move (relative to the camera)'],
+    ['W / Up', 'Walk forward'],
+    ['S / Down', 'Back away, slowly'],
+    ['A D / Left Right', 'Turn on the spot'],
     ['Shift', 'Run'],
+    ['Shift + Down', 'Quick turn \u2014 spin 180\u00b0'],
     ['E / Enter', 'Examine, take, open doors, advance dialogue'],
     ['Space', 'Hold to aim'],
     ['J / X', 'Fire or swing'],
@@ -51,8 +57,10 @@ function showHelp() {
     <div class="panel-body help"><dl>
       ${rows.map(r => `<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join('')}
     </dl>
-    <p class="khint" style="margin-top:18px">Ammunition is finite. The knife never runs out,
-    but it will cost you blood.<br>Save at the typewriter in the Keeper&rsquo;s Office.</p></div>
+    <p class="khint" style="margin-top:18px">You steer yourself, not the camera: left and right
+    turn you on the spot, forward walks the way you face.<br>
+    Ammunition is finite. The knife never runs out, but it will cost you blood.<br>
+    Save at the typewriter in the Keeper&rsquo;s Office.</p></div>
     <div class="panel-foot"><button class="pbtn wide" id="hClose">BACK</button></div></div>`,
     (root) => { root.querySelector('#hClose').onclick = () => game.ui.closeOverlay(); });
 }
