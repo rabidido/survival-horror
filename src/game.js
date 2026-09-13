@@ -803,7 +803,7 @@ export class Game {
     } else if (aiming) {
       // rooted: left/right swings the body, auto-aim finishes the job
       p.speed = 0;
-      p.angle += turnIn * AIM_TURN_RATE * dt;
+      p.angle -= turnIn * AIM_TURN_RATE * dt;
       const tgt = this.autoTarget();
       if (tgt) {
         const a = Math.atan2(tgt.x - p.x, tgt.z - p.z);
@@ -819,7 +819,10 @@ export class Game {
       } else {
         if (fwdIn >= 0 || !inp.runHeld) this.qtLatch = false;
 
-        if (turnIn) p.angle += turnIn * TURN_RATE * dt;
+        // Right turns the character to ITS right. Forward is +Z at heading 0,
+        // and something facing +Z has its right hand toward -X, so turning
+        // right decreases the heading rather than increasing it.
+        if (turnIn) p.angle -= turnIn * TURN_RATE * dt;
 
         let sp = 0;
         if (fwdIn > 0) sp = inp.running ? RUN : WALK;
