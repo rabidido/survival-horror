@@ -73,7 +73,7 @@ function showHelp() {
     ['Pad up', 'Walk forward'],
     ['Pad down', 'Back away, slowly'],
     ['Pad left/right', 'Turn on the spot'],
-    ['Pad corners', 'Walk and turn at once \u2014 the corner wedges are the widest'],
+    ['Pad corners', 'Hold two directions at once \u2014 walk and turn together'],
     ['RUN', 'Hold to run'],
     ['RUN + down', 'Quick turn \u2014 spin 180\u00b0'],
     ['ACT', 'Examine, take, open doors, advance dialogue'],

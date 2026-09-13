@@ -58,46 +58,49 @@ export class Input {
 
   _bindTouch(root) {
     const pad = root.querySelector('#dpad');
-    // One continuous disc split into eight wedges that meet along the
-    // diagonals. The diagonals are the awkward ones to hit, so they get the
-    // wider slice -- 54 degrees against 36 -- and the artwork is drawn to
-    // match, rather than showing equal wedges and behaving otherwise.
-    const SEGS = [
-      { id: 'sR', c: 0, w: 36, x: 1, y: 0 },
-      { id: 'sUR', c: 45, w: 54, x: 1, y: 1 },
-      { id: 'sU', c: 90, w: 36, x: 0, y: 1 },
-      { id: 'sUL', c: 135, w: 54, x: -1, y: 1 },
-      { id: 'sL', c: 180, w: 36, x: -1, y: 0 },
-      { id: 'sDL', c: 225, w: 54, x: -1, y: -1 },
-      { id: 'sD', c: 270, w: 36, x: 0, y: -1 },
-      { id: 'sDR', c: 315, w: 54, x: 1, y: -1 },
-    ];
-    for (const sg of SEGS) sg.el = root.querySelector('#' + sg.id);
-
-    const DEAD = 0.27;           // matches the drawn hub
-    const applySeg = (sg) => {
-      this.pad.up = !!sg && sg.y > 0;
-      this.pad.down = !!sg && sg.y < 0;
-      this.pad.right = !!sg && sg.x > 0;
-      this.pad.left = !!sg && sg.x < 0;
-      for (const s2 of SEGS) s2.el.classList.toggle('on', s2 === sg);
+    const quads = {
+      up: root.querySelector('#sU'), down: root.querySelector('#sD'),
+      left: root.querySelector('#sL'), right: root.querySelector('#sR'),
     };
-    const clearDirs = () => applySeg(null);
+    const glyphs = {};
+    for (const k of Object.keys(quads)) {
+      glyphs[k] = root.querySelector('.gly[data-for="' + quads[k].id + '"]');
+    }
+    const thumb = root.querySelector('#dThumb');
+
+    // Four directions, not eight. Each axis is tested on its own against a
+    // threshold, so the corners engage two at once exactly as the rocker under
+    // a real d-pad does -- rather than a diagonal being a ninth thing to hit.
+    // At T = 0.30 a press within 27.5 degrees of a corner holds both.
+    const T = 0.30;
+    const DEAD = 0.26;           // matches the drawn hub
+
+    const setDirs = (up, down, left, right) => {
+      this.pad.up = up; this.pad.down = down;
+      this.pad.left = left; this.pad.right = right;
+      const on = { up, down, left, right };
+      for (const k of Object.keys(quads)) {
+        quads[k].classList.toggle('on', on[k]);
+        glyphs[k].classList.toggle('on', on[k]);
+      }
+    };
+    const clearDirs = () => { setDirs(false, false, false, false); thumb.classList.remove('on'); };
 
     const sample = (clientX, clientY) => {
       const r = pad.getBoundingClientRect();
       const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
       const rad = Math.min(r.width, r.height) / 2;
-      const dx = (clientX - cx) / rad, dy = (cy - clientY) / rad;   // dy up-positive
-      if (Math.hypot(dx, dy) < DEAD) return clearDirs();
-      const deg = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
-      for (const sg of SEGS) {
-        let d = deg - sg.c;
-        while (d > 180) d -= 360;
-        while (d < -180) d += 360;
-        if (Math.abs(d) <= sg.w / 2) return applySeg(sg);
-      }
-      clearDirs();
+      let dx = (clientX - cx) / rad, dy = (cy - clientY) / rad;   // dy up-positive
+      const len = Math.hypot(dx, dy);
+      if (len < DEAD) { setDirs(false, false, false, false); thumb.classList.remove('on'); return; }
+      // Direction only: how far past the deadzone the thumb sits changes
+      // nothing, because the input is digital.
+      const ux = dx / len, uy = dy / len;
+      setDirs(uy > T, uy < -T, ux < -T, ux > T);
+      const show = Math.min(len, 1);
+      thumb.setAttribute('cx', (100 + ux * show * 74).toFixed(1));
+      thumb.setAttribute('cy', (100 - uy * show * 74).toFixed(1));
+      thumb.classList.add('on');
     };
 
     const start = (e) => {

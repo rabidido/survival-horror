@@ -31,12 +31,15 @@ Input is **digital**, not analog. On touch that means a D-pad rather than a
 stick: every direction is fully on or fully off, and the keyboard and the pad
 produce exactly the same values.
 
-The pad is one continuous disc cut into eight wedges that meet along the
-diagonals, so there is no dead space between up and right to fall into, and a
-thumb can slide from one direction to the next without lifting. The diagonal
-wedges are deliberately wider than the cardinal ones &mdash; 54 degrees against
-36 &mdash; because they are the awkward ones to hit, and the artwork is drawn to
-match the real zones rather than showing equal wedges and behaving otherwise.
+The pad is a circle with **four** directions, not eight. Each axis is tested on
+its own against a threshold, so pressing a corner holds two directions at once
+&mdash; up *and* right &mdash; exactly as the rocker under a physical d-pad does,
+rather than a diagonal being a ninth thing to aim at. Both quarters light up
+when it happens, which is the mechanic made visible.
+
+A corner covers 55 degrees of the dial against a cardinal's 35, so the
+diagonals are the easier press rather than the harder one, and a thumb can
+slide from up into the corner without lifting.
 
 | Desktop | Touch | Action |
 | --- | --- | --- |

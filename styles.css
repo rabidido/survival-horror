@@ -72,19 +72,22 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block;backgro
 #touch{position:absolute;inset:0;pointer-events:none;}
 #dpad{position:absolute;left:calc(16px + env(safe-area-inset-left));
   bottom:calc(14px + env(safe-area-inset-bottom));
-  width:166px;height:166px;pointer-events:auto;touch-action:none;
+  width:172px;height:172px;pointer-events:auto;touch-action:none;
   -webkit-user-select:none;user-select:none;}
 #dsvg{width:100%;height:100%;display:block;overflow:visible;}
 #dsvg .rim{fill:rgba(8,8,9,.55);stroke:rgba(210,200,180,.30);stroke-width:1.5;}
-/* One continuous surface: the segments meet along the diagonals, so there is
-   no dead space between up and right to fall into. */
-#dsvg .seg{fill:rgba(26,26,28,.62);stroke:none;transition:fill .05s linear;}
-#dsvg .seg.on{fill:rgba(200,190,165,.40);}
-#dsvg .divs line{stroke:rgba(210,200,180,.16);stroke-width:1.2;}
-#dsvg .gly{fill:rgba(216,210,196,.55);pointer-events:none;}
-#dsvg .seg.on ~ .gly{}
+/* Four quarters split on the diagonals. Press near a split and both light:
+   that is the whole mechanic, made visible. */
+#dsvg .quad{fill:rgba(26,26,28,.6);transition:fill .04s linear;}
+#dsvg .quad.on{fill:rgba(200,190,165,.38);}
+#dsvg .divs line{stroke:rgba(210,200,180,.14);stroke-width:1.2;}
+#dsvg .gly{fill:rgba(216,210,196,.5);pointer-events:none;transition:fill .04s linear;}
+#dsvg .gly.on{fill:#fff;}
 #dsvg .hub{fill:rgba(12,12,13,.9);stroke:rgba(210,200,180,.22);stroke-width:1.4;
   pointer-events:none;}
+#dsvg #dThumb{fill:rgba(230,220,195,.16);stroke:rgba(230,220,195,.5);stroke-width:1.5;
+  pointer-events:none;opacity:0;transition:opacity .1s;}
+#dsvg #dThumb.on{opacity:1;}
 
 #buttons{position:absolute;right:calc(14px + env(safe-area-inset-right));
   bottom:calc(16px + env(safe-area-inset-bottom));display:grid;gap:10px;
@@ -211,7 +214,7 @@ h1 span{color:var(--blood);}
 @media (max-height:760px), (max-width:430px){
   .tbtn{width:62px;height:62px;font-size:11px;}
   .tbtn.small{width:46px;height:46px;font-size:9.5px;}
-  #dpad{width:142px;height:142px;left:calc(12px + env(safe-area-inset-left));
+  #dpad{width:146px;height:146px;left:calc(12px + env(safe-area-inset-left));
         bottom:calc(10px + env(safe-area-inset-bottom));}
   #buttons{gap:8px;}
   #prompt{bottom:38%;font-size:11px;padding:6px 10px;}
