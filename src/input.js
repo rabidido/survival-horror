@@ -41,16 +41,19 @@ export class Input {
       if (e.repeat) { return; }
       this.keys.add(e.code);
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.runHeld = true;
-      if (e.code === 'Space') { this.aimHeld = true; e.preventDefault(); }
+      if (e.code === 'Space') { if (this.setAim) this.setAim(true); else this.aimHeld = true; e.preventDefault(); }
       if (map[e.code]) { this.press(map[e.code]); e.preventDefault(); }
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     });
     addEventListener('keyup', (e) => {
       this.keys.delete(e.code);
       if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') this.runHeld = false;
-      if (e.code === 'Space') this.aimHeld = false;
+      if (e.code === 'Space') { if (this.setAim) this.setAim(false); else this.aimHeld = false; }
     });
-    addEventListener('blur', () => { this.keys.clear(); this.aimHeld = false; this.runHeld = false; });
+    addEventListener('blur', () => {
+      this.keys.clear(); this.runHeld = false;
+      if (this.setAim) this.setAim(false); else this.aimHeld = false;
+    });
   }
 
   _bindTouch(root) {
@@ -157,7 +160,24 @@ export class Input {
       el.addEventListener('click', (e) => { if (!this.touch) on(e); });
     };
 
-    holdBtn('#btnAim', v => { this.aimHeld = v; });
+    // AIM latches on touch instead of being held. One thumb is on the pad and
+    // the other cannot hold AIM and tap FIRE at the same time, so holding it
+    // made aiming and firing physically impossible on a phone.
+    const aimEl = root.querySelector('#btnAim');
+    this.setAim = (v) => {
+      this.aimHeld = v;
+      if (aimEl) aimEl.classList.toggle('latched', v);
+    };
+    if (aimEl) {
+      const toggle = (e) => {
+        this.touch = true;
+        if (this.onGesture) this.onGesture();
+        this.setAim(!this.aimHeld);
+        e.preventDefault(); e.stopPropagation();
+      };
+      aimEl.addEventListener('touchstart', toggle, { passive: false });
+      aimEl.addEventListener('click', (e) => { if (!this.touch) toggle(e); });
+    }
     holdBtn('#btnRun', v => { this.runHeld = v; });
     tapBtn('#btnFire', 'fire');
     tapBtn('#btnAction', 'action');

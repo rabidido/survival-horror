@@ -276,3 +276,7 @@ h1 span{color:var(--blood);}
 .ios-hint{font-size:10.5px;line-height:1.7;color:#6f6a60;margin:16px auto 0;max-width:330px;}
 .ios-hint b{color:var(--amber);font-weight:400;}
 @media (max-height:480px){ .ios-hint{margin-top:9px;font-size:9.5px;} }
+
+/* AIM latches rather than being held, so it has to look unmistakably engaged */
+.tbtn.latched{background:rgba(200,160,90,.32);border-color:var(--amber);color:#ffe6b8;
+  box-shadow:0 0 14px rgba(200,161,90,.35), inset 0 0 12px rgba(200,161,90,.18);}

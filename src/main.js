@@ -77,8 +77,9 @@ function showHelp() {
     ['RUN', 'Hold to run'],
     ['RUN + down', 'Quick turn \u2014 spin 180\u00b0'],
     ['ACT', 'Examine, take, open doors, advance dialogue'],
-    ['AIM', 'Hold to raise your weapon and lock on'],
-    ['FIRE', 'Shoot or swing while aiming'],
+    ['AIM', 'Tap to raise your weapon \u2014 it stays up. Tap again to lower'],
+    ['FIRE', 'Shoot or swing while the weapon is up'],
+    ['Pad up/down', 'Also lowers a raised weapon, so you are never stuck'],
     ['BAG', 'Inventory, documents and status'],
   ] : [
     ['W / Up', 'Walk forward'],

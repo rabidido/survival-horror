@@ -46,8 +46,13 @@ match the real zones rather than showing equal wedges and behaving otherwise.
 | `Shift` | **RUN** | Run |
 | `Shift` + down | **RUN** + D-pad down | Quick turn &mdash; spin 180&deg; |
 | `E` / `Enter` | **ACT** | Examine, take, open doors, advance dialogue |
-| hold `Space` | hold **AIM** | Raise your weapon; it locks on to the nearest target |
+| hold `Space` | tap **AIM** | Raise your weapon; it locks on to the nearest target |
 | `J` / `X` | **FIRE** | Shoot or swing |
+
+On touch, **AIM latches** rather than being held: one thumb is on the pad and
+the other cannot hold AIM and tap FIRE at once. Tap it again, or press straight
+forward or back, to lower the weapon. A diagonal keeps it raised, since that is
+someone lining up a shot rather than leaving.
 | `Q` | &mdash; | Switch between handgun and knife |
 | `I` / `Tab` | **BAG** | Inventory, documents, status |
 | `Esc` | &mdash; | Status screen |

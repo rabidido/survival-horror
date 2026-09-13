@@ -13,8 +13,11 @@ import { Input } from './input.js';
 const SAVE_KEY = 'ashgrove_save_v1';
 const PLAYER_R = 0.31;
 const WALK = 1.9, RUN = 3.45, BACKSTEP = 1.05;
-const TURN_RATE = 2.7;        // radians/second on the spot
-const AIM_TURN_RATE = 1.5;    // slower while the weapon is up
+// Turning is deliberately unhurried: a full 180 takes about 1.7 seconds on
+// the spot, and roughly 2.9 with the weapon raised. Reversing quickly is what
+// the back+run quick turn is for.
+const TURN_RATE = 1.85;       // radians/second, about 106 deg/s
+const AIM_TURN_RATE = 1.1;    // about 63 deg/s while the weapon is up
 const QUICK_TURN_TIME = 0.32; // back + run spins you 180 degrees
 
 class Inventory {
@@ -302,6 +305,7 @@ export class Game {
     this.player.group.rotation.y = entry[2];
     this.quickTurn = null;
     this.qtLatch = false;
+    if (this.input.setAim) this.input.setAim(false);
     this.pickCamera(true);
     this.ui.setRoom(def.name);
     this.checkpoint = this.snapshot();
@@ -801,6 +805,12 @@ export class Game {
       p.speed = 0;
       if (k >= 1) { this.quickTurn = null; p.angle = this.qtFrom + Math.PI; }
     } else if (aiming) {
+      // A latched aim could otherwise hold you in place wondering why you will
+      // not walk, so a clear press of forward or back lowers the weapon. A
+      // diagonal does not: that is someone lining up a shot, not leaving.
+      if (fwdIn !== 0 && turnIn === 0) {
+        if (inp.setAim) inp.setAim(false); else inp.aimHeld = false;
+      }
       // rooted: left/right swings the body, auto-aim finishes the job
       p.speed = 0;
       p.angle -= turnIn * AIM_TURN_RATE * dt;
