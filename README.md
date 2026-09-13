@@ -29,8 +29,14 @@ are facing. Your input never changes meaning when the camera cuts.
 
 Input is **digital**, not analog. On touch that means a D-pad rather than a
 stick: every direction is fully on or fully off, and the keyboard and the pad
-produce exactly the same values. The pad reads eight directions, so a thumb can
-hold forward and a turn together, and slide between them without lifting.
+produce exactly the same values.
+
+The pad is one continuous disc cut into eight wedges that meet along the
+diagonals, so there is no dead space between up and right to fall into, and a
+thumb can slide from one direction to the next without lifting. The diagonal
+wedges are deliberately wider than the cardinal ones &mdash; 54 degrees against
+36 &mdash; because they are the awkward ones to hit, and the artwork is drawn to
+match the real zones rather than showing equal wedges and behaving otherwise.
 
 | Desktop | Touch | Action |
 | --- | --- | --- |

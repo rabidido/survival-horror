@@ -55,37 +55,46 @@ export class Input {
 
   _bindTouch(root) {
     const pad = root.querySelector('#dpad');
-    const cells = {
-      up: root.querySelector('#dUp'), down: root.querySelector('#dDown'),
-      left: root.querySelector('#dLeft'), right: root.querySelector('#dRight'),
-    };
+    // One continuous disc split into eight wedges that meet along the
+    // diagonals. The diagonals are the awkward ones to hit, so they get the
+    // wider slice -- 54 degrees against 36 -- and the artwork is drawn to
+    // match, rather than showing equal wedges and behaving otherwise.
+    const SEGS = [
+      { id: 'sR', c: 0, w: 36, x: 1, y: 0 },
+      { id: 'sUR', c: 45, w: 54, x: 1, y: 1 },
+      { id: 'sU', c: 90, w: 36, x: 0, y: 1 },
+      { id: 'sUL', c: 135, w: 54, x: -1, y: 1 },
+      { id: 'sL', c: 180, w: 36, x: -1, y: 0 },
+      { id: 'sDL', c: 225, w: 54, x: -1, y: -1 },
+      { id: 'sD', c: 270, w: 36, x: 0, y: -1 },
+      { id: 'sDR', c: 315, w: 54, x: 1, y: -1 },
+    ];
+    for (const sg of SEGS) sg.el = root.querySelector('#' + sg.id);
 
-    // Digital pad: the touch position picks one of eight directions, so a
-    // thumb can slide between them and hold two at once (walk while turning),
-    // but every direction is full-on or off. No partial deflection.
-    const DEAD = 0.30;           // fraction of the pad radius that reads as centre
-    const setDirs = (x, y) => {
-      this.pad.up = y > 0; this.pad.down = y < 0;
-      this.pad.left = x < 0; this.pad.right = x > 0;
-      cells.up.classList.toggle('on', this.pad.up);
-      cells.down.classList.toggle('on', this.pad.down);
-      cells.left.classList.toggle('on', this.pad.left);
-      cells.right.classList.toggle('on', this.pad.right);
+    const DEAD = 0.27;           // matches the drawn hub
+    const applySeg = (sg) => {
+      this.pad.up = !!sg && sg.y > 0;
+      this.pad.down = !!sg && sg.y < 0;
+      this.pad.right = !!sg && sg.x > 0;
+      this.pad.left = !!sg && sg.x < 0;
+      for (const s2 of SEGS) s2.el.classList.toggle('on', s2 === sg);
     };
-    const clearDirs = () => setDirs(0, 0);
+    const clearDirs = () => applySeg(null);
 
     const sample = (clientX, clientY) => {
       const r = pad.getBoundingClientRect();
       const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
       const rad = Math.min(r.width, r.height) / 2;
       const dx = (clientX - cx) / rad, dy = (cy - clientY) / rad;   // dy up-positive
-      const len = Math.hypot(dx, dy);
-      if (len < DEAD) return clearDirs();
-      // snap to the nearest of eight compass directions
-      const oct = Math.round(Math.atan2(dy, dx) / (Math.PI / 4));
-      const dirs = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
-      const d = dirs[((oct % 8) + 8) % 8];
-      setDirs(d[0], d[1]);
+      if (Math.hypot(dx, dy) < DEAD) return clearDirs();
+      const deg = (Math.atan2(dy, dx) * 180 / Math.PI + 360) % 360;
+      for (const sg of SEGS) {
+        let d = deg - sg.c;
+        while (d > 180) d -= 360;
+        while (d < -180) d += 360;
+        if (Math.abs(d) <= sg.w / 2) return applySeg(sg);
+      }
+      clearDirs();
     };
 
     const start = (e) => {

@@ -70,9 +70,10 @@ function boot() {
 function showHelp() {
   const touch = matchMedia('(pointer: coarse)').matches;
   const rows = touch ? [
-    ['D-pad up', 'Walk forward'],
-    ['D-pad down', 'Back away, slowly'],
-    ['D-pad left/right', 'Turn on the spot'],
+    ['Pad up', 'Walk forward'],
+    ['Pad down', 'Back away, slowly'],
+    ['Pad left/right', 'Turn on the spot'],
+    ['Pad corners', 'Walk and turn at once \u2014 the corner wedges are the widest'],
     ['RUN', 'Hold to run'],
     ['RUN + down', 'Quick turn \u2014 spin 180\u00b0'],
     ['ACT', 'Examine, take, open doors, advance dialogue'],
