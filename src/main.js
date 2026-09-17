@@ -25,90 +25,70 @@ function boot() {
   btnContinue.onclick = () => game.start(true);
   btnHelp.onclick = () => showHelp();
 
-  // A fullscreen request is only granted from a gesture, and browsers refuse
-  // it often enough that it needs a button of its own. iOS Safari has no
-  // element fullscreen at all, so there we point at Add to Home Screen, which
-  // launches the manifest's fullscreen display mode instead.
+  // F11 does this too, but the game is played borderless and the button is
+  // the discoverable way in. A request is only granted from inside a real
+  // click handler, which is why there is a button rather than a call on boot.
   const el = document.documentElement;
-  const canFull = !!(el.requestFullscreen || el.webkitRequestFullscreen);
-  const standalone = matchMedia('(display-mode: fullscreen)').matches
-    || matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   const btnFull = document.getElementById('btnFull');
-  const iosHint = document.getElementById('iosHint');
-  const isTouch = (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window;
-  if (!standalone) {
-    if (canFull) {
-      btnFull.classList.remove('hidden');
-      btnFull.onclick = () => {
+  const canFull = !!(el.requestFullscreen || el.webkitRequestFullscreen);
+  const isFull = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  if (canFull) {
+    btnFull.classList.remove('hidden');
+    btnFull.onclick = () => {
+      try {
+        if (isFull()) {
+          const exit = document.exitFullscreen || document.webkitExitFullscreen;
+          exit.call(document);
+          return;
+        }
         const fs = el.requestFullscreen || el.webkitRequestFullscreen;
-        try {
-          const p = fs.call(el);
-          if (p && p.catch) p.catch(() => {});
-        } catch (e) { /* refused */ }
-      };
-    } else if (isTouch) {
-      iosHint.classList.remove('hidden');
-    }
+        const p = fs.call(el);
+        if (p && p.catch) p.catch(() => {});
+      } catch (e) { /* refused */ }
+    };
   }
-  const syncFull = () => {
-    const on = !!(document.fullscreenElement || document.webkitFullscreenElement);
-    btnFull.textContent = on ? 'EXIT FULLSCREEN' : 'FULLSCREEN';
-    if (on) btnFull.onclick = () => (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-  };
+  const syncFull = () => { btnFull.textContent = isFull() ? 'EXIT FULLSCREEN' : 'FULLSCREEN'; };
   addEventListener('fullscreenchange', syncFull);
   addEventListener('webkitfullscreenchange', syncFull);
 
-  // wording depends on whether there is a device to turn
-  const rt = document.getElementById('rotateText');
-  if (rt && !matchMedia('(pointer: coarse)').matches) {
-    rt.textContent = 'Ashgrove Manor is played in landscape. Make the window wider than it is tall.';
-  }
+  // The title screen is driven with the keyboard like everything else.
+  game.ui.handleNav(game.input);
 
   loop();
 }
 
 function showHelp() {
-  const touch = matchMedia('(pointer: coarse)').matches;
-  const rows = touch ? [
-    ['Pad up', 'Walk forward'],
-    ['Pad down', 'Back away, slowly'],
-    ['Pad left/right', 'Turn on the spot'],
-    ['Pad corners', 'Hold two directions at once \u2014 walk and turn together'],
-    ['RUN', 'Hold to run'],
-    ['RUN + down', 'Quick turn \u2014 spin 180\u00b0'],
-    ['ACT', 'Examine, take, open doors, advance dialogue'],
-    ['AIM', 'Tap to raise your weapon \u2014 it stays up. Tap again to lower'],
-    ['FIRE', 'Shoot or swing while the weapon is up'],
-    ['Pad up/down', 'Also lowers a raised weapon, so you are never stuck'],
-    ['BAG', 'Inventory, documents and status'],
-  ] : [
-    ['W / Up', 'Walk forward'],
-    ['S / Down', 'Back away, slowly'],
-    ['A D / Left Right', 'Turn on the spot'],
-    ['Shift', 'Run'],
-    ['Shift + Down', 'Quick turn \u2014 spin 180\u00b0'],
-    ['E / Enter', 'Examine, take, open doors, advance dialogue'],
-    ['Space', 'Hold to aim'],
-    ['J / X', 'Fire or swing'],
-    ['Q', 'Switch weapon'],
-    ['I / Tab', 'Inventory'],
-    ['Esc', 'Status screen'],
+  const rows = [
+    ['<kbd>W</kbd> <kbd>&uarr;</kbd>', 'Walk forward'],
+    ['<kbd>S</kbd> <kbd>&darr;</kbd>', 'Back away, slowly'],
+    ['<kbd>A</kbd> <kbd>D</kbd> <kbd>&larr;</kbd> <kbd>&rarr;</kbd>', 'Turn on the spot'],
+    ['<kbd>Shift</kbd>', 'Hold to run'],
+    ['<kbd>Shift</kbd> + <kbd>S</kbd>', 'Quick turn \u2014 spin 180\u00b0'],
+    ['<kbd>E</kbd> <kbd>Enter</kbd>', 'Examine, take, open doors, advance dialogue'],
+    ['<kbd>Space</kbd>', 'Hold to raise your weapon; it locks on to the nearest target'],
+    ['<kbd>J</kbd> <kbd>X</kbd> <kbd>Ctrl</kbd>', 'Fire or swing while the weapon is up'],
+    ['<kbd>Q</kbd>', 'Switch between handgun and knife'],
+    ['<kbd>I</kbd> <kbd>Tab</kbd>', 'Inventory, documents and status'],
+    ['<kbd>Esc</kbd>', 'Status screen, and back out of any menu'],
+    ['<kbd>F11</kbd>', 'Fullscreen'],
   ];
   game.ui.openOverlay('help', `<div class="panel">
     <div class="panel-head"><div class="panel-title">CONTROLS</div></div>
     <div class="panel-body help"><dl>
       ${rows.map(r => `<dt>${r[0]}</dt><dd>${r[1]}</dd>`).join('')}
     </dl>
-    <p class="khint" style="margin-top:18px">You steer yourself, not the camera: left and right
+    <p class="khint" style="margin-top:22px">You steer yourself, not the camera: left and right
     turn you on the spot, forward walks the way you face.<br>
+    Every menu is driven with the arrow keys and <kbd>Enter</kbd>.<br>
     Ammunition is finite. The knife never runs out, but it will cost you blood.<br>
     Save at the typewriter in the Keeper&rsquo;s Office.</p></div>
     <div class="panel-foot"><button class="pbtn wide" id="hClose">BACK</button></div></div>`,
-    (root) => { root.querySelector('#hClose').onclick = () => game.ui.closeOverlay(); });
+    (root) => { root.querySelector('#hClose').onclick = () => game.ui.closeOverlay(); },
+    () => game.ui.closeOverlay());
 }
 
-// A thrown frame used to vanish into the console, which on a phone means it
-// vanishes entirely: the game just stops responding with nothing to report.
+// A thrown frame used to vanish into the console: the game would just stop
+// responding, with nothing on screen to say why.
 let errorShown = false;
 function showError(err) {
   if (errorShown) return;
@@ -116,7 +96,7 @@ function showError(err) {
   const d = document.createElement('div');
   d.id = 'errbar';
   d.textContent = String((err && err.message) || err);
-  d.title = 'tap to dismiss';
+  d.title = 'click to dismiss';
   d.onclick = () => d.remove();
   document.body.appendChild(d);
 }
@@ -143,29 +123,16 @@ function loop() {
 const dbg = new URLSearchParams(location.search).has('debug')
   ? Object.assign(document.body.appendChild(document.createElement('div')), { id: 'dbg' })
   : null;
-let touchCount = 0;
-if (dbg) addEventListener('touchstart', () => { touchCount++; }, { passive: true, capture: true });
 function updateDebug() {
   const g = game;
   dbg.textContent = [
     `${innerWidth}x${innerHeight} dpr${(devicePixelRatio || 1).toFixed(1)} ${fps}fps`,
-    `mode=${g.mode} gated=${!!g.gated}`,
-    `touchMode=${g.touchMode} touches=${touchCount}`,
-    `touchUI=${!document.getElementById('touch').classList.contains('hidden')}`,
-    `coarse=${matchMedia('(pointer: coarse)').matches} maxPts=${navigator.maxTouchPoints || 0}`,
-    `stick=${g.input.stick.active ? g.input.stick.x.toFixed(2) + ',' + g.input.stick.y.toFixed(2) : 'off'}`,
-    `move=${g.input.move.x.toFixed(2)},${g.input.move.y.toFixed(2)} sp=${g.player.speed.toFixed(2)}`,
+    `mode=${g.mode} gated=${!!g.gated} overlay=${g.ui.overlayOpen || '-'}`,
+    `keys=${Array.from(g.input.keys).join(' ') || '-'}`,
+    `run=${g.input.runHeld} aim=${g.input.aimHeld}`,
+    `move=${g.input.move.x},${g.input.move.y} sp=${g.player.speed.toFixed(2)}`,
     `pos=${g.player.x.toFixed(1)},${g.player.z.toFixed(1)} room=${g.roomId || '-'}`,
   ].join('\n');
 }
-
-// Keep the canvas correct when the mobile URL bar shows/hides.
-let lastH = innerHeight;
-setInterval(() => {
-  if (innerHeight !== lastH) { lastH = innerHeight; game && game.resize(); }
-}, 500);
-
-document.addEventListener('gesturestart', e => e.preventDefault());
-document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
 
 boot();

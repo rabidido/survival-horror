@@ -72,22 +72,22 @@ class Inventory {
 if (typeof window !== 'undefined') window.__ROOMS = ROOMS;
 
 export class Game {
+  // The smallest window the game will play in. Roughly a 16:9 slice of a
+  // 1280x720 screen once the browser's own chrome is off the top.
+  static MIN_W = 900;
+  static MIN_H = 520;
+
   constructor(canvas) {
     this.canvas = canvas;
-    this.mode = 'title';         // title | play | menu | dead | end
-    // Whether to show the on-screen controls. A single media query is not
-    // enough: `pointer: coarse` reports false in desktop-site mode and on
-    // phones with a stylus or a paired mouse, and getting this wrong on a
-    // phone leaves no way at all to control the game.
-    this.touchMode = (navigator.maxTouchPoints || 0) > 0
-      || 'ontouchstart' in window
-      || matchMedia('(pointer: coarse)').matches
-      || matchMedia('(any-pointer: coarse)').matches;
+    this.mode = 'title';         // title | play | menu | dead | end | gated
 
     this.renderer = new THREE.WebGLRenderer({
       canvas, antialias: false, powerPreference: 'high-performance', stencil: false,
     });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.6));
+    // A desktop GPU can afford a sharper buffer than a phone could, but a
+    // 4K panel at full ratio is four times the pixels for very little gain
+    // once the grain and the vignette are on top, so it still stops at 2.
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     // Tone mapping happens in the post pass (three skips it for render targets).
     this.renderer.toneMapping = THREE.NoToneMapping;
@@ -97,13 +97,7 @@ export class Game {
     this.camera = new THREE.PerspectiveCamera(52, 1, 0.08, 120);
     this.post = new PostFX(this.renderer);
     this.ui = new UI(this);
-    this.input = new Input(document);
-    // Last line of defence: an actual touch proves there is a touchscreen,
-    // whatever the media queries claimed.
-    this.input.onFirstTouch = () => this.enableTouchControls();
-    // Fullscreen is only granted from inside a real gesture handler, so take a
-    // second chance from the first on-screen control the player touches.
-    this.input.onGesture = () => this.goFullscreen();
+    this.input = new Input();
 
     this.clock = new THREE.Clock();
     this.fade = 1;
@@ -112,23 +106,15 @@ export class Game {
 
     this.resize();
     addEventListener('resize', () => this.resize());
-    addEventListener('orientationchange', () => setTimeout(() => this.resize(), 260));
 
     this.buildPlayer();
     this.resetState();
   }
 
   // ------------------------------------------------------------------ setup
-  enableTouchControls() {
-    if (this.touchMode) return;
-    this.touchMode = true;
-    const hudVisible = !this.ui.el.hud.classList.contains('hidden');
-    this.ui.el.touch.classList.toggle('hidden', !hudVisible);
-  }
-
   resize() {
     const w = innerWidth, h = innerHeight;
-    this.updateOrientationGate();
+    this.updateViewportGate();
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.applyFov();
@@ -140,11 +126,12 @@ export class Game {
   // of view from a bounded horizontal one:
   //   narrower than REF -> widen vertically, so the composed width still fits
   //   up to MAX_ASPECT  -> show the extra width, the shot still reads
-  //   beyond MAX_ASPECT -> stop widening, or a phone held sideways (2.2:1)
-  //                        splays every room out into a fish-eye
+  //   beyond MAX_ASPECT -> stop widening, or a 21:9 ultrawide splays every
+  //                        room out into a fish-eye
+  // REF is 16:9, which is what the angles are framed for on a monitor.
   applyFov() {
     const base = this.baseFov || 52;
-    const REF_ASPECT = 1.7, MAX_ASPECT = 1.95;
+    const REF_ASPECT = 1.78, MAX_ASPECT = 2.1;
     const a = Math.max(0.2, this.camera.aspect);
     const halfV = THREE.MathUtils.degToRad(base) / 2;
     const halfH = Math.atan(Math.tan(halfV) * THREE.MathUtils.clamp(a, REF_ASPECT, MAX_ASPECT));
@@ -153,31 +140,34 @@ export class Game {
     this.camera.updateProjectionMatrix();
   }
 
-  // The game is built for landscape: every camera angle is composed wide, and
-  // the touch controls need the width. In portrait we hold play rather than
-  // present a broken frame.
+  // The game is built for a monitor: every camera angle is composed wide, and
+  // the HUD assumes room around the frame. Below this the shot stops reading
+  // and the panels start colliding, so play holds rather than present a
+  // broken frame.
   //
   // Deliberately re-derived every frame rather than on transitions, and it
-  // fails open: if the rotate screen is missing from the page, nothing is
+  // fails open: if the gate screen is missing from the page, nothing is
   // gated. A hold with no visible explanation is indistinguishable from the
   // game being broken, so it must not be reachable.
-  updateOrientationGate() {
-    if (this.rotateEl === undefined) this.rotateEl = document.getElementById('rotate');
-    const portrait = !!this.rotateEl && innerWidth < innerHeight;
-    if (this.rotateEl) this.rotateEl.classList.toggle('hidden', !portrait);
-    this.gated = portrait;
+  updateViewportGate() {
+    if (this.smallEl === undefined) {
+      this.smallEl = document.getElementById('small');
+      this.smallSizeEl = document.getElementById('smallSize');
+    }
+    const tooSmall = !!this.smallEl && (innerWidth < Game.MIN_W || innerHeight < Game.MIN_H);
+    if (this.smallEl) this.smallEl.classList.toggle('hidden', !tooSmall);
+    if (tooSmall && this.smallSizeEl) {
+      this.smallSizeEl.textContent =
+        `${innerWidth} \u00d7 ${innerHeight} \u2014 NEEDS ${Game.MIN_W} \u00d7 ${Game.MIN_H}`;
+    }
+    this.gated = tooSmall;
 
-    if (portrait) {
+    if (tooSmall) {
       if (this.mode === 'play') this.mode = 'gated';
     } else if (this.mode === 'gated') {
       this.mode = 'play';
-      // drop anything that was held when the screen turned
-      this.input.keys.clear();
-      this.input.aimHeld = false;
-      this.input.runHeld = false;
-      this.input.pad.active = false;
-      this.input.pad.up = this.input.pad.down = false;
-      this.input.pad.left = this.input.pad.right = false;
+      // drop anything that was held while the window was being dragged about
+      this.input.releaseAll();
       this.clock.getDelta();
     }
   }
@@ -561,7 +551,19 @@ export class Game {
 
   closeMenus() {
     this.ui.closeOverlay();
+    // Space doubles as confirm in a menu and aim in play, so a menu closed
+    // with Space must not hand the weapon straight back up.
+    this.input.aimHeld = false;
     if (this.mode === 'menu') this.mode = 'play';
+  }
+
+  // Escape backs out of whatever is open. Some screens have to leave by their
+  // own door -- the breaker array checks whether it was solved on the way out
+  // -- so the overlay gets to name the way back if it needs one.
+  cancelMenu() {
+    const back = this.ui.onCancel;
+    if (back) { back(); return; }
+    this.closeMenus();
   }
 
   endGame() {
@@ -655,7 +657,6 @@ export class Game {
 
   // --------------------------------------------------------------- screens
   start(fromSave) {
-    this.goFullscreen();
     document.querySelector('#title').classList.add('hidden');
     this.ui.showHUD(true);
     this.mode = 'play';
@@ -669,22 +670,6 @@ export class Game {
         'The chain on the front doors will not give.\n\nThere is a service gate in the cellar, the groundskeeper said. It needs power.'
       ), 900);
     }
-  }
-
-  // Called from a tap, which is the only time a browser will grant it. No
-  // orientation lock: the rotate screen covers that, and locking orientation
-  // is what makes viewport reporting unreliable on some Android builds.
-  goFullscreen() {
-    if (!this.touchMode || (this.fsTried || 0) >= 2) return;
-    this.fsTried = (this.fsTried || 0) + 1;
-    try {
-      if (document.fullscreenElement || document.webkitFullscreenElement) return;
-      const el = document.documentElement;
-      const fs = el.requestFullscreen || el.webkitRequestFullscreen;
-      if (!fs) return;
-      const p = fs.call(el);
-      if (p && p.catch) p.catch(() => {});
-    } catch (e) { /* refused */ }
   }
 
   showDeath() {
@@ -739,17 +724,31 @@ export class Game {
     this.damageFx = Math.max(0, this.damageFx - dt * 1.8);
     this.post.uniforms.uDamage.value = this.damageFx * 0.9;
 
-    this.updateOrientationGate();
+    this.updateViewportGate();
     this.input.update();
-    if (this.mode === 'play') {
+    if (this.gated) {
+      // The gate screen is over everything; nothing behind it may be driven.
+      this.input.endFrame();
+    } else if (this.mode === 'play') {
       this.stats.time += dt;
       this.updatePlay(dt);
     } else if (this.mode === 'menu') {
-      if (this.input.consume('inventory') || this.input.consume('cancel')) this.closeMenus();
+      this.ui.handleNav(this.input);
+      if (this.input.consume('inventory')) this.closeMenus();
+      else if (this.input.consume('cancel')) this.cancelMenu();
       this.input.endFrame();
     } else {
+      // title, death and ending screens are keyboard-driven too. Escape only
+      // does something on a screen that named a way out -- the death screen
+      // deliberately has none.
+      this.ui.handleNav(this.input);
+      if (this.input.consume('cancel') && this.ui.onCancel) this.ui.onCancel();
       this.input.endFrame();
     }
+
+    // Nothing in play wants a pointer, and a cursor parked over the frame is
+    // the one thing that breaks a fixed camera shot.
+    document.body.classList.toggle('nocursor', this.mode === 'play' && !this.gated);
 
     this.ui.setCondition(this.hp / this.maxHp);
     this.ui.update(dt);
@@ -805,13 +804,9 @@ export class Game {
       p.speed = 0;
       if (k >= 1) { this.quickTurn = null; p.angle = this.qtFrom + Math.PI; }
     } else if (aiming) {
-      // A latched aim could otherwise hold you in place wondering why you will
-      // not walk, so a clear press of forward or back lowers the weapon. A
-      // diagonal does not: that is someone lining up a shot, not leaving.
-      if (fwdIn !== 0 && turnIn === 0) {
-        if (inp.setAim) inp.setAim(false); else inp.aimHeld = false;
-      }
-      // rooted: left/right swings the body, auto-aim finishes the job
+      // Rooted while the weapon is up, as in the games this is modelled on:
+      // left/right swings the body slowly and auto-aim finishes the job.
+      // Letting go of Space is what lowers it, so you are never stuck.
       p.speed = 0;
       p.angle -= turnIn * AIM_TURN_RATE * dt;
       const tgt = this.autoTarget();
@@ -874,7 +869,6 @@ export class Game {
 
     this.animateWorld(dt, p.speed);
     this.updateReticle(aiming);
-    if (this.ui.el.btnFire) this.ui.el.btnFire.disabled = false;
     inp.endFrame();
   }
 

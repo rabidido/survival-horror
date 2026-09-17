@@ -5,10 +5,13 @@ angles, deliberate movement, scarce ammunition, locked doors and a couple of
 puzzles standing between you and the way out.
 
 It is a static site &mdash; no server, no build step, no external asset downloads &mdash;
-so it runs straight from GitHub Pages and works on a phone, held sideways.
+so it runs straight from GitHub Pages.
 
-**Landscape only.** Every camera angle is composed wide and the touch controls
-need the width, so in portrait the game holds and asks you to turn the screen.
+**It is a PC game.** Keyboard only, on a monitor: every camera angle is composed
+wide, the HUD assumes room around the frame, and every menu is driven with the
+arrow keys. There are no touch controls. In a window smaller than 900 &times; 520
+the game holds and asks for more room rather than present a broken frame; press
+`F11` or use the FULLSCREEN button on the title screen.
 
 ## Play
 
@@ -27,38 +30,45 @@ Movement is **tank controls**, as in the games this is modelled on: left and
 right turn you on the spot, forward and back move along whatever direction you
 are facing. Your input never changes meaning when the camera cuts.
 
-Input is **digital**, not analog. On touch that means a D-pad rather than a
-stick: every direction is fully on or fully off, and the keyboard and the pad
-produce exactly the same values.
+Input is **digital**: every direction is fully on or fully off. Holding forward
+and a turn together walks a curve.
 
-The pad is a circle with **four** directions, not eight. Each axis is tested on
-its own against a threshold, so pressing a corner holds two directions at once
-&mdash; up *and* right &mdash; exactly as the rocker under a physical d-pad does,
-rather than a diagonal being a ninth thing to aim at. Both quarters light up
-when it happens, which is the mechanic made visible.
+| Key | Action |
+| --- | --- |
+| `W` / `Up` | Walk forward |
+| `S` / `Down` | Back away, slowly |
+| `A` `D` / `Left` `Right` | Turn on the spot |
+| `Shift` | Hold to run |
+| `Shift` + `S` | Quick turn &mdash; spin 180&deg; |
+| `E` / `Enter` | Examine, take, open doors, advance dialogue |
+| hold `Space` | Raise your weapon; it locks on to the nearest target |
+| `J` / `X` / `Ctrl` | Fire or swing while the weapon is up |
+| `Q` | Switch between handgun and knife |
+| `I` / `Tab` | Inventory, documents and status |
+| `Esc` | Status screen, and back out of any menu |
+| `F11` | Fullscreen |
 
-A corner covers 55 degrees of the dial against a cardinal's 35, so the
-diagonals are the easier press rather than the harder one, and a thumb can
-slide from up into the corner without lifting.
+Aiming is **held**, not latched: the weapon is up for as long as `Space` is
+down, so you can never be left standing rooted wondering why you will not walk.
+While it is up you are rooted and left/right swings the body slowly, which is
+the trade the whole combat system is built around.
 
-| Desktop | Touch | Action |
-| --- | --- | --- |
-| `W` / up | D-pad up | Walk forward |
-| `S` / down | D-pad down | Back away, slowly |
-| `A` `D` / left right | D-pad left/right | Turn on the spot |
-| `Shift` | **RUN** | Run |
-| `Shift` + down | **RUN** + D-pad down | Quick turn &mdash; spin 180&deg; |
-| `E` / `Enter` | **ACT** | Examine, take, open doors, advance dialogue |
-| hold `Space` | tap **AIM** | Raise your weapon; it locks on to the nearest target |
-| `J` / `X` | **FIRE** | Shoot or swing |
+### Menus
 
-On touch, **AIM latches** rather than being held: one thumb is on the pad and
-the other cannot hold AIM and tap FIRE at once. Tap it again, or press straight
-forward or back, to lower the weapon. A diagonal keeps it raised, since that is
-someone lining up a shot rather than leaving.
-| `Q` | &mdash; | Switch between handgun and knife |
-| `I` / `Tab` | **BAG** | Inventory, documents, status |
-| `Esc` | &mdash; | Status screen |
+Every screen &mdash; title, inventory, storage trunk, keypad, breaker array,
+death and ending &mdash; is navigated with the arrow keys and `Enter`, and `Esc`
+backs out. The mouse works too, and moving it takes the keyboard cursor with it
+so there are never two highlights on screen at once.
+
+The cursor moves geometrically rather than in DOM order: from where it is, it
+takes the nearest control that actually lies in the direction pressed and
+shares that row or column, which makes the item grid behave like a grid.
+Greyed-out entries are skipped, but they still mark where the next row of
+controls sits &mdash; that is how CLOSE stays reachable straight down from the
+inventory grid when it is the only button left enabled. Running off the end of
+a row or a column wraps round to the other end of that same line.
+
+On the keypad you can simply type the code on the number row.
 
 Save at the typewriter in the Keeper's Office. Progress is stored in
 `localStorage`, so it survives a reload but lives only in that browser.
@@ -97,8 +107,8 @@ this repository &mdash; the only third-party code is a vendored copy of three.js
 | `src/items.js` | Item definitions, inventory icons drawn to canvas, and world pickup meshes. |
 | `src/postfx.js` | Fullscreen composite: ACES tone mapping, sRGB encode, colour grade, chromatic fringe, vignette and film grain. |
 | `src/game.js` | Room loading, player controller, collision, combat, progression, saves. |
-| `src/ui.js` | HUD and every overlay screen (inventory, documents, keypad, breakers, death, ending). |
-| `src/input.js` | Keyboard plus a virtual stick and touch buttons. |
+| `src/ui.js` | HUD, every overlay screen, and the keyboard cursor that drives them. |
+| `src/input.js` | Keyboard: held keys for movement, edge-triggered actions for the game, and a separate repeating stream for menu navigation. |
 
 ### Fixed cameras
 
@@ -108,12 +118,12 @@ therefore relative to the character rather than the view, a cut mid-stride
 cannot reverse your input &mdash; which is exactly why the games this imitates
 used these controls in the first place.
 
-Angles are composed at a reference aspect of 1.7. Rather than let the window
-shape change what a shot contains, the vertical field of view is derived from a
-horizontal one that is clamped: narrower windows widen vertically so the
-composed width still fits, wider ones show some extra, and past 1.95 the
-widening stops &mdash; otherwise a phone held sideways, at better than 2.1:1,
-splays every room out into a fish-eye.
+Angles are composed at a reference aspect of 1.78, which is what a monitor is.
+Rather than let the window shape change what a shot contains, the vertical
+field of view is derived from a horizontal one that is clamped: narrower
+windows widen vertically so the composed width still fits, wider ones show some
+extra, and past 2.1 the widening stops &mdash; otherwise a 21:9 ultrawide splays
+every room out into a fish-eye.
 
 ### Lighting
 
@@ -121,6 +131,10 @@ There are no shadow maps. Rooms are lit with a handful of point lights plus
 blob shadows under each actor, and the scene renders to an offscreen target
 that the post pass tone maps. Three.js skips its own tone mapping and colour
 encoding when rendering to a render target, so `postfx.js` does both itself.
+
+The render buffer is capped at a device pixel ratio of 2: past that it is four
+times the pixels for very little gain once the grain and the vignette are on
+top of the image.
 
 ## Deploying
 

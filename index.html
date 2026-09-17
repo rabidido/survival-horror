@@ -2,15 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no,maximum-scale=1">
-<meta name="theme-color" content="#000000">
-<meta name="description" content="Ashgrove Manor - a browser survival horror in the classic fixed-camera style.">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Ashgrove">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon.svg">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Ashgrove Manor - a browser survival horror for the PC, in the classic fixed-camera style.">
 <title>ASHGROVE MANOR</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23090909'/%3E%3Cpath d='M16 4 L26 12 V28 H6 V12 Z' fill='none' stroke='%238c1f1a' stroke-width='2'/%3E%3Crect x='14' y='19' width='4' height='9' fill='%23c8a15a'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="styles.css">
@@ -36,38 +30,9 @@
     <div id="subtitle" class="hidden"><p id="subtitleText"></p><span id="subtitleMore">&#9662;</span></div>
     <div id="reticle" class="hidden"><i></i></div>
     <div id="toast"></div>
-  </div>
-
-  <!-- ------------------------------------------------- touch controls -->
-  <div id="touch" class="hidden">
-    <div id="dpad" aria-label="Move">
-  <svg id="dsvg" viewBox="0 0 200 200" aria-hidden="true">
-    <circle class="rim" cx="100" cy="100" r="97.5"/>
-    <path id="sR" class="quad" d="M118.38,118.38 L167.88,167.88 A96.00,96.00 0 0 0 167.88,32.12 L118.38,81.62 A26.00,26.00 0 0 1 118.38,118.38 Z"/>
-    <path id="sU" class="quad" d="M118.38,81.62 L167.88,32.12 A96.00,96.00 0 0 0 32.12,32.12 L81.62,81.62 A26.00,26.00 0 0 1 118.38,81.62 Z"/>
-    <path id="sL" class="quad" d="M81.62,81.62 L32.12,32.12 A96.00,96.00 0 0 0 32.12,167.88 L81.62,118.38 A26.00,26.00 0 0 1 81.62,81.62 Z"/>
-    <path id="sD" class="quad" d="M81.62,118.38 L32.12,167.88 A96.00,96.00 0 0 0 167.88,167.88 L118.38,118.38 A26.00,26.00 0 0 1 81.62,118.38 Z"/>
-    <g class="divs">
-      <line x1="118.38" y1="81.62" x2="167.88" y2="32.12"/>
-      <line x1="81.62" y1="81.62" x2="32.12" y2="32.12"/>
-      <line x1="81.62" y1="118.38" x2="32.12" y2="167.88"/>
-      <line x1="118.38" y1="118.38" x2="167.88" y2="167.88"/>
-    </g>
-    <path class="gly" data-for="sR" d="M180.00,100.00 L152.40,113.06 L152.40,86.94 Z"/>
-    <path class="gly" data-for="sU" d="M100.00,20.00 L113.06,47.60 L86.94,47.60 Z"/>
-    <path class="gly" data-for="sL" d="M20.00,100.00 L47.60,86.94 L47.60,113.06 Z"/>
-    <path class="gly" data-for="sD" d="M100.00,180.00 L86.94,152.40 L113.06,152.40 Z"/>
-    <circle class="hub" cx="100" cy="100" r="26"/>
-    <circle id="dThumb" cx="100" cy="100" r="15"/>
-  </svg>
-    </div>
-    </div>
-    <div id="buttons">
-      <button id="btnInv" class="tbtn small" aria-label="Inventory">BAG</button>
-      <button id="btnRun" class="tbtn small" aria-label="Run">RUN</button>
-      <button id="btnAction" class="tbtn" aria-label="Action">ACT</button>
-      <button id="btnAim" class="tbtn" aria-label="Aim">AIM</button>
-      <button id="btnFire" class="tbtn fire" aria-label="Fire">FIRE</button>
+    <div id="keyhint">
+      <span><b>W A S D</b> move</span><span><b>Shift</b> run</span><span><b>Space</b> aim</span>
+      <span><b>J</b> fire</span><span><b>E</b> use</span><span><b>I</b> inventory</span>
     </div>
   </div>
 
@@ -80,35 +45,38 @@
       <div class="title-sub">A SURVIVAL HORROR</div>
       <h1>ASHGROVE<br><span>MANOR</span></h1>
       <div class="title-rule"></div>
-      <p class="title-blurb">The doors are chained. The lights are out.<br>Find a way into the cellar, and out of the grounds.</p>
+      <p class="title-blurb">The doors are chained. The lights are out.<br>
+        Find a way into the cellar, and out of the grounds.</p>
       <div class="title-menu">
         <button id="btnNew" class="mbtn">NEW GAME</button>
         <button id="btnContinue" class="mbtn" disabled>CONTINUE</button>
         <button id="btnHelp" class="mbtn ghost">CONTROLS</button>
         <button id="btnFull" class="mbtn ghost hidden">FULLSCREEN</button>
       </div>
-      <p id="iosHint" class="ios-hint hidden">For fullscreen on iPhone, use
-        <b>Share &rarr; Add to Home Screen</b> and launch it from there.</p>
-      <div class="title-foot">Fixed cameras &middot; Tank controls &middot; Landscape</div>
+      <p class="title-keys">Arrow keys or <b>W</b>/<b>S</b> to choose &middot;
+        <b>Enter</b> to select &middot; <b>F11</b> for fullscreen</p>
+      <div class="title-foot">Fixed cameras &middot; Tank controls &middot; Keyboard</div>
     </div>
   </div>
 
   <div id="loading" class="screen hidden"><div class="load-inner">LOADING<span class="dots">...</span></div></div>
 
-  <!-- shown whenever the window is taller than it is wide -->
-  <div id="rotate" class="screen hidden">
-    <div class="rotate-inner">
-      <svg viewBox="0 0 120 120" width="104" height="104" aria-hidden="true">
-        <rect x="34" y="16" width="52" height="88" rx="7" fill="none" stroke="#8a8275" stroke-width="3"/>
-        <rect x="41" y="27" width="38" height="66" fill="rgba(200,161,90,.12)"/>
-        <circle cx="60" cy="99" r="2.4" fill="#8a8275"/>
-        <path d="M96 46a40 40 0 0 1-9 30" fill="none" stroke="#c8a15a" stroke-width="3.4"
-              stroke-linecap="round"/>
-        <path d="M80 74l8 6 5-9" fill="none" stroke="#c8a15a" stroke-width="3.4"
+  <!-- shown whenever the window is too small to compose a shot in -->
+  <div id="small" class="screen hidden">
+    <div class="small-inner">
+      <svg viewBox="0 0 140 110" width="150" height="118" aria-hidden="true">
+        <rect x="8" y="10" width="124" height="76" rx="5" fill="none" stroke="#8a8275" stroke-width="3"/>
+        <rect x="17" y="19" width="106" height="58" fill="rgba(200,161,90,.10)"/>
+        <path d="M56 96h28l4 8H52z" fill="#8a8275"/>
+        <path d="M44 48h-16M28 48l7-7M28 48l7 7" fill="none" stroke="#c8a15a" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M96 48h16M112 48l-7-7M112 48l-7 7" fill="none" stroke="#c8a15a" stroke-width="3"
               stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <h2>TURN THE SCREEN</h2>
-      <p id="rotateText">Ashgrove Manor is played in landscape.</p>
+      <h2>MORE ROOM</h2>
+      <p id="smallText">Ashgrove Manor is built for a big screen.
+        Make the window larger, or press <b>F11</b> for fullscreen.</p>
+      <p id="smallSize" class="small-size"></p>
     </div>
   </div>
 </div>
